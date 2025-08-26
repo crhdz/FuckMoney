@@ -18,6 +18,7 @@ export interface Expense {
   user_id?: string
   created_at: string
   updated_at: string
+  loan_id?: string // Nuevo campo para vincular a préstamos
 }
 
 export interface Category {
@@ -27,6 +28,20 @@ export interface Category {
   icon: string
   user_id?: string
   created_at: string
+}
+
+export interface Loan {
+  id: string
+  name: string
+  total_amount: number
+  remaining_amount: number
+  monthly_payment: number
+  interest_rate: number
+  start_date: string
+  end_date: string
+  user_id?: string
+  created_at: string
+  updated_at: string
 }
 
 // CRUD para gastos
@@ -138,4 +153,60 @@ export async function deleteCategory(id: string) {
     .from('categories')
     .delete()
     .eq('id', id)
+}
+
+// CRUD para préstamos
+export async function getLoans() {
+  const result = await supabase
+    .from('loans')
+    .select('*')
+    .order('created_at', { ascending: false });
+  return result;
+}
+
+export async function addLoan(loan: Omit<Loan, 'id' | 'created_at' | 'updated_at'>) {
+  return supabase
+    .from('loans')
+    .insert([loan])
+    .select()
+}
+
+export async function updateLoan(id: string, updates: Partial<Loan>) {
+  return supabase
+    .from('loans')
+    .update(updates)
+    .eq('id', id)
+    .select()
+}
+
+export async function deleteLoan(id: string) {
+  return supabase
+    .from('loans')
+    .delete()
+    .eq('id', id)
+}
+
+// Función para calcular cuánto falta por pagar de un préstamo
+export async function calculateRemainingPayments(loanId: string) {
+  const { data: loan } = await supabase
+    .from('loans')
+    .select('*')
+    .eq('id', loanId)
+    .single();
+
+  if (!loan) return null;
+
+  const today = new Date();
+  const endDate = new Date(loan.end_date);
+  const startDate = new Date(loan.start_date);
+  
+  const totalMonths = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
+  const elapsedMonths = Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
+  const remainingMonths = Math.max(0, totalMonths - elapsedMonths);
+  
+  return {
+    remainingMonths,
+    remainingAmount: remainingMonths * loan.monthly_payment,
+    monthlyPayment: loan.monthly_payment
+  };
 }

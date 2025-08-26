@@ -7,7 +7,8 @@ import {
   BarChart3, 
   TrendingUp, 
   Settings,
-  Menu
+  Menu,
+  CreditCard
 } from 'lucide-react'
 
 interface LayoutProps {
@@ -21,6 +22,7 @@ export default function Layout({ children, title = "FuckMoney" }: LayoutProps) {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Añadir Gasto', href: '/expenses/add', icon: PlusCircle },
+    { name: 'Préstamos', href: '/loans', icon: CreditCard },
     { name: 'Vista Anual', href: '/annual', icon: Calendar },
     { name: 'Vista Mensual', href: '/monthly', icon: BarChart3 },
     { name: 'Predicciones', href: '/predictions', icon: TrendingUp },

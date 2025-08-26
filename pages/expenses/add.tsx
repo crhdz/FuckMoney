@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import Layout from '../../components/Layout'
-import { supabase } from '../../lib/supabase'
+import { supabase, getLoans } from '../../lib/supabase'
 
 export default function AddExpense() {
   const [formData, setFormData] = useState({
@@ -10,10 +10,12 @@ export default function AddExpense() {
     category: '',
     startDate: '',
     endDate: '',
-    isRecurring: true
+    isRecurring: true,
+    loanId: '' // Nuevo campo para préstamos
   })
   const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState<any[]>([])
+  const [loans, setLoans] = useState<any[]>([]) // Nueva variable para préstamos
   const [user, setUser] = useState<any>(null)
 
   const frequencies = [
@@ -38,6 +40,7 @@ export default function AddExpense() {
   useEffect(() => {
     if (user) {
       fetchCategories();
+      fetchLoans(); // Agregar función para cargar préstamos
     }
   }, [user]);
 
@@ -46,7 +49,6 @@ export default function AddExpense() {
     const { data, error } = await supabase
       .from('categories')
       .select('*')
-      .eq('user_id', user.id)
       .order('name', { ascending: true });
     if (!error && data) {
       setCategories(data);
@@ -62,6 +64,14 @@ export default function AddExpense() {
         { name: 'Servicios', id: 'servicios' },
         { name: 'Otros', id: 'otros' }
       ]);
+    }
+  }
+
+  async function fetchLoans() {
+    if (!user) return;
+    const { data, error } = await getLoans();
+    if (!error && data) {
+      setLoans(data);
     }
   }
 
@@ -88,6 +98,7 @@ export default function AddExpense() {
       end_date: formData.endDate || null,
       is_recurring: formData.isRecurring,
       user_id: user.id,
+      loan_id: formData.loanId || null,
     })
     
     setLoading(false)
@@ -104,7 +115,8 @@ export default function AddExpense() {
       category: '',
       startDate: '',
       endDate: '',
-      isRecurring: true
+      isRecurring: true,
+      loanId: ''
     })
     alert('Gasto añadido correctamente')
   }
@@ -200,6 +212,27 @@ export default function AddExpense() {
                 {categories.map(cat => (
                   <option key={cat.id} value={cat.name}>
                     {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Préstamo (opcional) */}
+            <div>
+              <label htmlFor="loanId" className="block text-sm font-medium text-gray-700 mb-2">
+                Préstamo asociado (opcional)
+              </label>
+              <select
+                id="loanId"
+                name="loanId"
+                value={formData.loanId}
+                onChange={handleChange}
+                className="input w-full"
+              >
+                <option value="">Sin préstamo asociado</option>
+                {loans.map(loan => (
+                  <option key={loan.id} value={loan.id}>
+                    {loan.name} - €{loan.monthly_payment}/mes
                   </option>
                 ))}
               </select>
