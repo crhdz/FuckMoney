@@ -23,7 +23,7 @@ export default function AnnualView() {
   ]
 
   const [user, setUser] = useState<any>(null);
-  const [monthlyData, setMonthlyData] = useState<{month: string, total: number, expenses: number}[]>([]);
+  const [monthlyData, setMonthlyData] = useState<{month: string, total: number, expenses: number}[]>(months.map(month => ({ month, total: 0, expenses: 0 })));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,7 +39,11 @@ export default function AnnualView() {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setMonthlyData(months.map(month => ({ month, total: 0, expenses: 0 })));
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     (async () => {
       const { data, error } = await supabase
@@ -49,7 +53,7 @@ export default function AnnualView() {
         .gte('created_at', `${selectedYear}-01-01`)
         .lte('created_at', `${selectedYear}-12-31`);
       if (error || !data) {
-        setMonthlyData([]);
+        setMonthlyData(months.map(month => ({ month, total: 0, expenses: 0 })));
         setLoading(false);
         return;
       }
