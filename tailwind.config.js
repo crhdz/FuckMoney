@@ -10,6 +10,7 @@ module.exports = {
       colors: {
   background: '#ffffff', // Color de fondo personalizado
   foreground: '#111111', // Color de texto personalizado
+  input: '#e5e7eb', // Color de borde para input
         primary: {
           50: '#eff6ff',
           500: '#3b82f6',
