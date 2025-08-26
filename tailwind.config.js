@@ -11,6 +11,7 @@ module.exports = {
   background: '#ffffff', // Color de fondo personalizado
   foreground: '#111111', // Color de texto personalizado
   input: '#e5e7eb', // Color de borde para input
+  'muted-foreground': '#6b7280', // Gris suave para placeholder
         primary: {
           50: '#eff6ff',
           500: '#3b82f6',
