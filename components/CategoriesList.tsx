@@ -9,6 +9,8 @@ export default function CategoriesList() {
   const [editDescription, setEditDescription] = useState("");
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
+  const [newColor, setNewColor] = useState("#6EE7B7");
+  const [newIcon, setNewIcon] = useState("Tag");
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -63,9 +65,17 @@ export default function CategoriesList() {
 
   async function handleAddCategory() {
     if (!newName.trim() || !user) return;
-    await supabase.from('categories').insert({ name: newName, description: newDescription, user_id: user.id });
+    await supabase.from('categories').insert({
+      name: newName,
+      description: newDescription,
+      user_id: user.id,
+      color: newColor,
+      icon: newIcon
+    });
     setNewName("");
     setNewDescription("");
+    setNewColor("#6EE7B7");
+    setNewIcon("Tag");
     fetchCategories();
   }
 
@@ -96,6 +106,16 @@ export default function CategoriesList() {
       <div className="flex flex-col md:flex-row gap-2 items-center">
         <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nueva categoría" className="input" />
         <input value={newDescription} onChange={e => setNewDescription(e.target.value)} placeholder="Descripción" className="input" />
+        <input type="color" value={newColor} onChange={e => setNewColor(e.target.value)} className="input w-12 h-12 p-0 border-none" title="Color" />
+        <select value={newIcon} onChange={e => setNewIcon(e.target.value)} className="input">
+          <option value="Tag">🏷️ Tag</option>
+          <option value="ShoppingCart">🛒 Shopping</option>
+          <option value="Utensils">🍽️ Food</option>
+          <option value="Home">🏠 Home</option>
+          <option value="Car">🚗 Car</option>
+          <option value="Heart">❤️ Health</option>
+          <option value="Gift">🎁 Gift</option>
+        </select>
         <button className="btn-primary" onClick={handleAddCategory}>Agregar</button>
       </div>
     </div>
