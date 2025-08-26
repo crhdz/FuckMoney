@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
 
 export default function AnnualView() {
@@ -21,15 +22,54 @@ export default function AnnualView() {
     { value: 'otros', label: 'Otros' }
   ]
 
-  // Datos de ejemplo (esto vendrá de Supabase)
-  const monthlyData = months.map((month, index) => ({
-    month,
-    total: Math.floor(Math.random() * 2000) + 500,
-    expenses: Math.floor(Math.random() * 10) + 3
-  }))
+  const [user, setUser] = useState<any>(null);
+  const [monthlyData, setMonthlyData] = useState<{month: string, total: number, expenses: number}[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const totalYear = monthlyData.reduce((sum, month) => sum + month.total, 0)
-  const averageMonth = totalYear / 12
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user || null);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    setLoading(true);
+    (async () => {
+      const { data, error } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('created_at', `${selectedYear}-01-01`)
+        .lte('created_at', `${selectedYear}-12-31`);
+      if (error || !data) {
+        setMonthlyData([]);
+        setLoading(false);
+        return;
+      }
+      // Agrupar por mes
+      const result = months.map((month, idx) => {
+        const monthNum = (idx+1).toString().padStart(2, '0');
+        const filtered = data.filter(e => e.created_at.startsWith(`${selectedYear}-${monthNum}`));
+        return {
+          month,
+          total: filtered.reduce((sum, e) => sum + (e.amount || 0), 0),
+          expenses: filtered.length
+        };
+      });
+      setMonthlyData(result);
+      setLoading(false);
+    })();
+  }, [user, selectedYear]);
+
+  const totalYear = monthlyData.reduce((sum, month) => sum + month.total, 0);
+  const averageMonth = totalYear / 12;
 
   return (
     <Layout title="Vista Anual">
@@ -115,29 +155,21 @@ export default function AnnualView() {
           </h3>
           
           <div className="space-y-4">
-            {monthlyData.map((data, index) => {
-              const percentage = (data.total / Math.max(...monthlyData.map(m => m.total))) * 100
-              
+            {loading ? (
+              <div className="text-gray-500">Cargando gastos...</div>
+            ) : monthlyData.map((data, index) => {
+              const percentage = monthlyData.length ? (data.total / Math.max(...monthlyData.map(m => m.total))) * 100 : 0;
               return (
                 <div key={index} className="flex items-center gap-4">
-                  <div className="w-20 text-sm font-medium text-gray-700">
-                    {data.month}
-                  </div>
+                  <div className="w-20 text-sm font-medium text-gray-700">{data.month}</div>
                   <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
-                    <div
-                      className="bg-blue-500 h-6 rounded-full flex items-center justify-end pr-2"
-                      style={{ width: `${percentage}%` }}
-                    >
-                      <span className="text-white text-xs font-medium">
-                        €{data.total}
-                      </span>
+                    <div className="bg-blue-500 h-6 rounded-full flex items-center justify-end pr-2" style={{ width: `${percentage}%` }}>
+                      <span className="text-white text-xs font-medium">€{data.total}</span>
                     </div>
                   </div>
-                  <div className="w-16 text-sm text-gray-500">
-                    {data.expenses} gastos
-                  </div>
+                  <div className="w-16 text-sm text-gray-500">{data.expenses} gastos</div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>

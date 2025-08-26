@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
 
 export default function MonthlyView() {
@@ -20,31 +21,55 @@ export default function MonthlyView() {
     { name: 'Otros', color: 'bg-gray-500', amount: 75 }
   ]
 
-  // Datos de ejemplo de gastos del mes
-  const expenses = [
-    { id: 1, name: 'Alquiler', amount: 800, category: 'Hogar', date: '2025-01-01', isRecurring: true },
-    { id: 2, name: 'Netflix', amount: 15.99, category: 'Ocio', date: '2025-01-05', isRecurring: true },
-    { id: 3, name: 'Gasolina', amount: 65, category: 'Transporte', date: '2025-01-08', isRecurring: false },
-    { id: 4, name: 'Supermercado', amount: 120, category: 'Alimentación', date: '2025-01-10', isRecurring: false },
-    { id: 5, name: 'Gimnasio', amount: 45, category: 'Otros', date: '2025-01-15', isRecurring: true },
-    { id: 6, name: 'Internet', amount: 39.99, category: 'Servicios', date: '2025-01-20', isRecurring: true },
-  ]
+  const [user, setUser] = useState<any>(null);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const totalMonth = categories.reduce((sum, cat) => sum + cat.amount, 0)
-  const totalExpenses = expenses.length
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user || null);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    setLoading(true);
+    const monthNum = (selectedMonth+1).toString().padStart(2, '0');
+    const start = `${selectedYear}-${monthNum}-01`;
+    const end = `${selectedYear}-${monthNum}-31`;
+    (async () => {
+      const { data, error } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('created_at', start)
+        .lte('created_at', end);
+      setExpenses(error || !data ? [] : data);
+      setLoading(false);
+    })();
+  }, [user, selectedMonth, selectedYear]);
+
+  const totalMonth = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+  const totalExpenses = expenses.length;
 
   const sortedExpenses = [...expenses].sort((a, b) => {
     switch (sortBy) {
       case 'amount':
-        return b.amount - a.amount
+        return b.amount - a.amount;
       case 'category':
-        return a.category.localeCompare(b.category)
+        return a.category.localeCompare(b.category);
       case 'name':
-        return a.name.localeCompare(b.name)
+        return a.name.localeCompare(b.name);
       default:
-        return new Date(b.date).getTime() - new Date(a.date).getTime()
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     }
-  })
+  });
 
   return (
     <Layout title="Vista Mensual">
@@ -177,7 +202,11 @@ export default function MonthlyView() {
             </div>
             
             <div className="space-y-3">
-              {sortedExpenses.map((expense) => (
+              {loading ? (
+                <div className="text-gray-500">Cargando gastos...</div>
+              ) : sortedExpenses.length === 0 ? (
+                <div className="text-gray-500">No hay gastos registrados para este mes.</div>
+              ) : sortedExpenses.map((expense) => (
                 <div
                   key={expense.id}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
@@ -187,14 +216,14 @@ export default function MonthlyView() {
                     <div>
                       <h4 className="font-medium text-gray-900">
                         {expense.name}
-                        {expense.isRecurring && (
+                        {expense.is_recurring && (
                           <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
                             Recurrente
                           </span>
                         )}
                       </h4>
                       <p className="text-sm text-gray-600">
-                        {expense.category} • {new Date(expense.date).toLocaleDateString()}
+                        {expense.category} • {new Date(expense.created_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
