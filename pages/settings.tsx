@@ -1,7 +1,16 @@
 import React, { useState } from 'react'
 import Layout from '../components/Layout'
+import { checkSupabaseConnection } from '../lib/supabase'
 
 export default function Settings() {
+  const [dbStatus, setDbStatus] = useState<'checking' | 'ok' | 'error'>('checking');
+
+  React.useEffect(() => {
+    (async () => {
+      const ok = await checkSupabaseConnection();
+      setDbStatus(ok ? 'ok' : 'error');
+    })();
+  }, []);
   const [settings, setSettings] = useState({
     currency: 'EUR',
     language: 'es',
@@ -74,6 +83,18 @@ export default function Settings() {
           <p className="text-gray-600">
             Personaliza tu experiencia y gestiona tus datos
           </p>
+            <div className="mt-4">
+              <span className="text-sm font-medium">Estado de conexión a la base de datos: </span>
+              {dbStatus === 'checking' && (
+                <span className="text-yellow-500">Comprobando...</span>
+              )}
+              {dbStatus === 'ok' && (
+                <span className="text-green-600">Conectado</span>
+              )}
+              {dbStatus === 'error' && (
+                <span className="text-red-600">Error de conexión</span>
+              )}
+            </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
