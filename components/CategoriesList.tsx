@@ -18,15 +18,23 @@ export default function CategoriesList() {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
     });
-    fetchCategories();
     return () => {
       listener.subscription.unsubscribe();
     };
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      fetchCategories();
+    }
+  }, [user]);
+
   async function fetchCategories() {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    if (!user) return;
     const { data, error } = await supabase
       .from('categories')
       .select('*')

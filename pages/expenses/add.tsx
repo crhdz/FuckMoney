@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Layout from '../../components/Layout'
 import { supabase } from '../../lib/supabase'
 
@@ -13,6 +13,8 @@ export default function AddExpense() {
     isRecurring: true
   })
   const [loading, setLoading] = useState(false)
+  const [categories, setCategories] = useState<any[]>([])
+  const [user, setUser] = useState<any>(null)
 
   const frequencies = [
     { value: 'weekly', label: 'Semanal' },
@@ -21,30 +23,61 @@ export default function AddExpense() {
     { value: 'yearly', label: 'Anual' }
   ]
 
-  const categories = [
-    { value: 'hogar', label: 'Hogar', color: 'bg-blue-500' },
-    { value: 'transporte', label: 'Transporte', color: 'bg-green-500' },
-    { value: 'ocio', label: 'Ocio', color: 'bg-purple-500' },
-    { value: 'alimentacion', label: 'Alimentación', color: 'bg-yellow-500' },
-    { value: 'salud', label: 'Salud', color: 'bg-red-500' },
-    { value: 'educacion', label: 'Educación', color: 'bg-indigo-500' },
-    { value: 'servicios', label: 'Servicios', color: 'bg-pink-500' },
-    { value: 'otros', label: 'Otros', color: 'bg-gray-500' }
-  ]
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user || null);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchCategories();
+    }
+  }, [user]);
+
+  async function fetchCategories() {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('name', { ascending: true });
+    if (!error && data) {
+      setCategories(data);
+    } else {
+      // Si no hay categorías, usar las predeterminadas
+      setCategories([
+        { name: 'Hogar', id: 'hogar' },
+        { name: 'Transporte', id: 'transporte' },
+        { name: 'Ocio', id: 'ocio' },
+        { name: 'Alimentación', id: 'alimentacion' },
+        { name: 'Salud', id: 'salud' },
+        { name: 'Educación', id: 'educacion' },
+        { name: 'Servicios', id: 'servicios' },
+        { name: 'Otros', id: 'otros' }
+      ]);
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    // Obtener usuario autenticado
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user
+    
     if (!user) {
       alert('Debes iniciar sesión para añadir gastos.')
       setLoading(false)
       return
     }
+    
     // Eliminar gastos de prueba
     await supabase.from('expenses').delete().eq('name', 'prueba').eq('user_id', user.id)
+    
     // Guardar nuevo gasto
     const { error } = await supabase.from('expenses').insert({
       name: formData.name,
@@ -56,11 +89,14 @@ export default function AddExpense() {
       is_recurring: formData.isRecurring,
       user_id: user.id,
     })
+    
     setLoading(false)
+    
     if (error) {
       alert('Error al guardar el gasto: ' + error.message)
       return
     }
+    
     setFormData({
       name: '',
       amount: '',
@@ -162,8 +198,8 @@ export default function AddExpense() {
               >
                 <option value="">Selecciona una categoría</option>
                 {categories.map(cat => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
+                  <option key={cat.id} value={cat.name}>
+                    {cat.name}
                   </option>
                 ))}
               </select>
