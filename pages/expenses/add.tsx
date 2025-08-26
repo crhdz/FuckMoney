@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import Layout from '../../components/Layout'
+import { supabase } from '../../lib/supabase'
 
 export default function AddExpense() {
   const [formData, setFormData] = useState({
@@ -11,6 +12,7 @@ export default function AddExpense() {
     endDate: '',
     isRecurring: true
   })
+  const [loading, setLoading] = useState(false)
 
   const frequencies = [
     { value: 'weekly', label: 'Semanal' },
@@ -32,11 +34,33 @@ export default function AddExpense() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // Aquí irá la lógica para guardar en Supabase
-    console.log('Datos del formulario:', formData)
-    
-    // Reset form
+    setLoading(true)
+    // Obtener usuario autenticado
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user
+    if (!user) {
+      alert('Debes iniciar sesión para añadir gastos.')
+      setLoading(false)
+      return
+    }
+    // Eliminar gastos de prueba
+    await supabase.from('expenses').delete().eq('name', 'prueba').eq('user_id', user.id)
+    // Guardar nuevo gasto
+    const { error } = await supabase.from('expenses').insert({
+      name: formData.name,
+      amount: parseFloat(formData.amount),
+      frequency: formData.frequency,
+      category: formData.category,
+      start_date: formData.startDate,
+      end_date: formData.endDate || null,
+      is_recurring: formData.isRecurring,
+      user_id: user.id,
+    })
+    setLoading(false)
+    if (error) {
+      alert('Error al guardar el gasto: ' + error.message)
+      return
+    }
     setFormData({
       name: '',
       amount: '',
@@ -46,7 +70,6 @@ export default function AddExpense() {
       endDate: '',
       isRecurring: true
     })
-    
     alert('Gasto añadido correctamente')
   }
 
@@ -200,8 +223,9 @@ export default function AddExpense() {
               <button
                 type="submit"
                 className="btn-primary flex-1"
+                disabled={loading}
               >
-                Añadir Gasto
+                {loading ? 'Añadiendo...' : 'Añadir Gasto'}
               </button>
               <button
                 type="button"
