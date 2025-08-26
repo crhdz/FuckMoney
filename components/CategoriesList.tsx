@@ -73,7 +73,11 @@ export default function CategoriesList() {
       return;
     }
 
+    console.log('Intentando crear categoría:', { name: newName, color: newColor, icon: newIcon });
+    
     const { data, error } = await addCategorySimple(newName, newColor, newIcon);
+
+    console.log('Resultado de addCategorySimple:', { data, error });
 
     if (error) {
       console.error('Error adding category:', error);
@@ -81,6 +85,12 @@ export default function CategoriesList() {
       return;
     }
 
+    if (!data || data.length === 0) {
+      alert('No se pudo crear la categoría. Verifica los permisos en Supabase.');
+      return;
+    }
+
+    alert('Categoría creada exitosamente!');
     setNewName("");
     setNewDescription("");
     setNewColor("#6EE7B7");

@@ -90,14 +90,19 @@ export async function addCategory(category: Omit<Category, 'id' | 'created_at'>)
 
 // Función simplificada que usa solo RLS sin user_id explícito
 export async function addCategorySimple(name: string, color: string, icon: string) {
-  return supabase
+  console.log('addCategorySimple called with:', { name, color, icon });
+  
+  const result = await supabase
     .from('categories')
     .insert([{
       name: name,
       color: color,
       icon: icon
     }])
-    .select()
+    .select();
+    
+  console.log('addCategorySimple result:', result);
+  return result;
 }
 
 // Función de emergencia que usa SQL directo
