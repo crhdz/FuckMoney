@@ -64,11 +64,15 @@ export default function CategoriesList() {
   }
 
   async function handleAddCategory() {
-    if (!newName.trim() || !user) {
+    if (!newName.trim() || !user || !user.id) {
       alert("El nombre de la categoría es obligatorio y debes estar conectado.");
       return;
     }
-
+    console.log('Intentando crear categoría para user_id:', user.id);
+    if (typeof user.id !== 'string' || user.id.length < 10) {
+      alert('El user_id no es válido: ' + user.id);
+      return;
+    }
     const { data, error } = await supabase.from('categories').insert({
       name: newName,
       user_id: user.id,
@@ -77,8 +81,8 @@ export default function CategoriesList() {
     }).select();
 
     if (error) {
-      console.error('Error adding category:', error);
-      alert(`Error al añadir la categoría: ${error.message}`);
+      console.error('Error adding category:', error, 'user_id:', user.id);
+      alert(`Error al añadir la categoría: ${error.message}\nuser_id: ${user.id}`);
       return;
     }
 
