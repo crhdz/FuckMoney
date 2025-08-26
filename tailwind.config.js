@@ -12,6 +12,7 @@ module.exports = {
   foreground: '#111111', // Color de texto personalizado
   input: '#e5e7eb', // Color de borde para input
   'muted-foreground': '#6b7280', // Gris suave para placeholder
+  ring: '#3b82f6', // Color para ring
         primary: {
           50: '#eff6ff',
           500: '#3b82f6',
