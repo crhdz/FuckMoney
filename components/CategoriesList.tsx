@@ -64,25 +64,32 @@ export default function CategoriesList() {
   }
 
   async function handleAddCategory() {
-    if (!newName.trim() || !user || !user.id) {
+    // Forzar la actualización de la sesión para obtener el user_id más reciente
+    const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+
+    if (sessionError || !session) {
+      console.error('Error refreshing session:', sessionError);
+      alert('No se pudo verificar tu sesión. Por favor, inicia sesión de nuevo.');
+      return;
+    }
+
+    const currentUser = session.user;
+
+    if (!newName.trim() || !currentUser || !currentUser.id) {
       alert("El nombre de la categoría es obligatorio y debes estar conectado.");
       return;
     }
-    console.log('Intentando crear categoría para user_id:', user.id);
-    if (typeof user.id !== 'string' || user.id.length < 10) {
-      alert('El user_id no es válido: ' + user.id);
-      return;
-    }
+
     const { data, error } = await supabase.from('categories').insert({
       name: newName,
-      user_id: user.id,
+      user_id: currentUser.id,
       color: newColor,
       icon: newIcon
     }).select();
 
     if (error) {
-      console.error('Error adding category:', error, 'user_id:', user.id);
-      alert(`Error al añadir la categoría: ${error.message}\nuser_id: ${user.id}`);
+      console.error('Error adding category:', error, 'user_id:', currentUser.id);
+      alert(`Error al añadir la categoría: ${error.message}\nuser_id: ${currentUser.id}`);
       return;
     }
 
