@@ -75,9 +75,38 @@ export async function getCategories(userId: string) {
 }
 
 export async function addCategory(category: Omit<Category, 'id' | 'created_at'>) {
+  // No incluir user_id explícito, dejar que RLS lo maneje automáticamente
+  const categoryData = {
+    name: category.name,
+    color: category.color,
+    icon: category.icon
+  };
+  
   return supabase
     .from('categories')
-    .insert([category])
+    .insert([categoryData])
+    .select()
+}
+
+// Función alternativa que usa el user_id del contexto actual
+export async function addCategoryWithAuth(category: Omit<Category, 'id' | 'created_at'>) {
+  // Obtener el usuario actual
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return { data: null, error: { message: 'Usuario no autenticado' } };
+  }
+
+  const categoryData = {
+    name: category.name,
+    color: category.color,
+    icon: category.icon,
+    user_id: user.id
+  };
+  
+  return supabase
+    .from('categories')
+    .insert([categoryData])
     .select()
 }
 
