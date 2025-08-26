@@ -11,7 +11,6 @@ export interface Expense {
   name: string
   amount: number
   frequency: 'weekly' | 'monthly' | 'quarterly' | 'yearly'
-  category: string
   start_date: string
   end_date?: string
   is_recurring: boolean
