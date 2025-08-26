@@ -9,16 +9,28 @@ export default function CategoriesList() {
   const [editDescription, setEditDescription] = useState("");
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user || null);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
     fetchCategories();
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   async function fetchCategories() {
     setLoading(true);
+    if (!user) return;
     const { data, error } = await supabase
       .from('categories')
       .select('*')
+      .eq('user_id', user.id)
       .order('name', { ascending: true });
     if (!error && data) setCategories(data);
     setLoading(false);
@@ -42,8 +54,8 @@ export default function CategoriesList() {
   }
 
   async function handleAddCategory() {
-    if (!newName.trim()) return;
-    await supabase.from('categories').insert({ name: newName, description: newDescription });
+    if (!newName.trim() || !user) return;
+    await supabase.from('categories').insert({ name: newName, description: newDescription, user_id: user.id });
     setNewName("");
     setNewDescription("");
     fetchCategories();
