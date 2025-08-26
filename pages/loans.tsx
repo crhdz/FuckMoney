@@ -17,6 +17,41 @@ export default function Loans() {
     end_date: ''
   })
 
+  // Función para calcular la fecha de fin automáticamente
+  function calculateEndDate(totalAmount: string, monthlyPayment: string, startDate: string) {
+    if (!totalAmount || !monthlyPayment || !startDate) return '';
+    
+    const total = parseFloat(totalAmount);
+    const monthly = parseFloat(monthlyPayment);
+    
+    if (total <= 0 || monthly <= 0) return '';
+    
+    const months = Math.ceil(total / monthly);
+    const start = new Date(startDate);
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + months);
+    
+    return end.toISOString().split('T')[0];
+  }
+
+  // Actualizar fecha de fin automáticamente cuando cambien los valores
+  function handleFormDataChange(field: string, value: string) {
+    const newFormData = { ...formData, [field]: value };
+    
+    if (field === 'total_amount' || field === 'monthly_payment' || field === 'start_date') {
+      const calculatedEndDate = calculateEndDate(
+        newFormData.total_amount,
+        newFormData.monthly_payment,
+        newFormData.start_date
+      );
+      if (calculatedEndDate) {
+        newFormData.end_date = calculatedEndDate;
+      }
+    }
+    
+    setFormData(newFormData);
+  }
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user || null);
@@ -103,14 +138,15 @@ export default function Loans() {
 
   function startEdit(loan: any) {
     setEditingLoan(loan);
-    setFormData({
+    const newFormData = {
       name: loan.name,
       total_amount: loan.total_amount.toString(),
       monthly_payment: loan.monthly_payment.toString(),
       interest_rate: loan.interest_rate.toString(),
       start_date: loan.start_date,
       end_date: loan.end_date
-    });
+    };
+    setFormData(newFormData);
     setShowForm(true);
   }
 
@@ -250,7 +286,7 @@ export default function Loans() {
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    onChange={(e) => handleFormDataChange('name', e.target.value)}
                     className="input w-full"
                     required
                   />
@@ -262,7 +298,7 @@ export default function Loans() {
                     type="number"
                     step="0.01"
                     value={formData.total_amount}
-                    onChange={(e) => setFormData({...formData, total_amount: e.target.value})}
+                    onChange={(e) => handleFormDataChange('total_amount', e.target.value)}
                     className="input w-full"
                     required
                   />
@@ -274,7 +310,7 @@ export default function Loans() {
                     type="number"
                     step="0.01"
                     value={formData.monthly_payment}
-                    onChange={(e) => setFormData({...formData, monthly_payment: e.target.value})}
+                    onChange={(e) => handleFormDataChange('monthly_payment', e.target.value)}
                     className="input w-full"
                     required
                   />
@@ -286,7 +322,7 @@ export default function Loans() {
                     type="number"
                     step="0.01"
                     value={formData.interest_rate}
-                    onChange={(e) => setFormData({...formData, interest_rate: e.target.value})}
+                    onChange={(e) => handleFormDataChange('interest_rate', e.target.value)}
                     className="input w-full"
                     required
                   />
@@ -297,21 +333,24 @@ export default function Loans() {
                   <input
                     type="date"
                     value={formData.start_date}
-                    onChange={(e) => setFormData({...formData, start_date: e.target.value})}
+                    onChange={(e) => handleFormDataChange('start_date', e.target.value)}
                     className="input w-full"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label className="label">Fecha de fin</label>
+                  <label className="label">Fecha de fin (calculada automáticamente)</label>
                   <input
                     type="date"
                     value={formData.end_date}
-                    onChange={(e) => setFormData({...formData, end_date: e.target.value})}
-                    className="input w-full"
-                    required
+                    onChange={(e) => handleFormDataChange('end_date', e.target.value)}
+                    className="input w-full bg-gray-100"
+                    readOnly
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Se calcula automáticamente basándose en el monto total y pago mensual
+                  </p>
                 </div>
                 
                 <div className="flex space-x-3 pt-4">
