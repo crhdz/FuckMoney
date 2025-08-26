@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { supabase, getCategories, addCategoryWithAuth, updateCategory, deleteCategory } from "../lib/supabase";
+import { supabase, getCategories, addCategorySimple, updateCategory, deleteCategory } from "../lib/supabase";
 
 export default function CategoriesList() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -73,11 +73,7 @@ export default function CategoriesList() {
       return;
     }
 
-    const { data, error } = await addCategoryWithAuth({
-      name: newName,
-      color: newColor,
-      icon: newIcon
-    });
+    const { data, error } = await addCategorySimple(newName, newColor, newIcon);
 
     if (error) {
       console.error('Error adding category:', error);

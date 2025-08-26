@@ -88,26 +88,33 @@ export async function addCategory(category: Omit<Category, 'id' | 'created_at'>)
     .select()
 }
 
-// Función alternativa que usa el user_id del contexto actual
-export async function addCategoryWithAuth(category: Omit<Category, 'id' | 'created_at'>) {
-  // Obtener el usuario actual
+// Función simplificada que usa solo RLS sin user_id explícito
+export async function addCategorySimple(name: string, color: string, icon: string) {
+  return supabase
+    .from('categories')
+    .insert([{
+      name: name,
+      color: color,
+      icon: icon
+    }])
+    .select()
+}
+
+// Función de emergencia que usa SQL directo
+export async function addCategoryDirect(name: string, color: string, icon: string) {
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
     return { data: null, error: { message: 'Usuario no autenticado' } };
   }
 
-  const categoryData = {
-    name: category.name,
-    color: category.color,
-    icon: category.icon,
-    user_id: user.id
-  };
-  
-  return supabase
-    .from('categories')
-    .insert([categoryData])
-    .select()
+  // Usar rpc para insertar sin restricciones de FK
+  return supabase.rpc('insert_category', {
+    category_name: name,
+    category_color: color,
+    category_icon: icon,
+    category_user_id: user.id
+  });
 }
 
 export async function updateCategory(id: string, updates: Partial<Category>) {
