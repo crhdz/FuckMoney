@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import { supabase, getCategories, addCategory, updateCategory, deleteCategory } from "../lib/supabase";
 
 export default function CategoriesList() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -37,17 +37,17 @@ export default function CategoriesList() {
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('name', { ascending: true });
+    const { data, error } = await getCategories(user.id);
     if (!error && data) setCategories(data);
     setLoading(false);
   }
 
   async function handleDelete(id: string) {
-    await supabase.from('categories').delete().eq('id', id);
+    const { error } = await deleteCategory(id);
+    if (error) {
+      alert(`Error al eliminar la categoría: ${error.message}`);
+      return;
+    }
     fetchCategories();
   }
 
@@ -58,38 +58,31 @@ export default function CategoriesList() {
   }
 
   async function handleEditSave(id: string) {
-  await supabase.from('categories').update({ name: editName }).eq('id', id);
+    const { error } = await updateCategory(id, { name: editName });
+    if (error) {
+      alert(`Error al actualizar la categoría: ${error.message}`);
+      return;
+    }
     setEditingId(null);
     fetchCategories();
   }
 
   async function handleAddCategory() {
-    // Forzar la actualización de la sesión para obtener el user_id más reciente
-    const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
-
-    if (sessionError || !session) {
-      console.error('Error refreshing session:', sessionError);
-      alert('No se pudo verificar tu sesión. Por favor, inicia sesión de nuevo.');
-      return;
-    }
-
-    const currentUser = session.user;
-
-    if (!newName.trim() || !currentUser || !currentUser.id) {
+    if (!newName.trim() || !user) {
       alert("El nombre de la categoría es obligatorio y debes estar conectado.");
       return;
     }
 
-    const { data, error } = await supabase.from('categories').insert({
+    const { data, error } = await addCategory({
       name: newName,
-      user_id: currentUser.id,
       color: newColor,
-      icon: newIcon
-    }).select();
+      icon: newIcon,
+      user_id: user.id
+    });
 
     if (error) {
-      console.error('Error adding category:', error, 'user_id:', currentUser.id);
-      alert(`Error al añadir la categoría: ${error.message}\nuser_id: ${currentUser.id}`);
+      console.error('Error adding category:', error);
+      alert(`Error al añadir la categoría: ${error.message}`);
       return;
     }
 
