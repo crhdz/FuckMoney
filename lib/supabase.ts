@@ -67,11 +67,14 @@ export async function deleteExpense(id: string) {
 
 // CRUD para categorías
 export async function getCategories(userId: string) {
-  return supabase
+  console.log('getCategories called with userId:', userId);
+  // Si estamos usando RLS, no necesitamos filtrar por user_id
+  const result = await supabase
     .from('categories')
     .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: false });
+  console.log('getCategories result:', result);
+  return result;
 }
 
 export async function addCategory(category: Omit<Category, 'id' | 'created_at'>) {

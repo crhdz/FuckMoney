@@ -36,8 +36,10 @@ export default function CategoriesList() {
       setLoading(false);
       return;
     }
+    console.log('fetchCategories called for user:', user.id);
     setLoading(true);
     const { data, error } = await getCategories(user.id);
+    console.log('fetchCategories result:', { data, error });
     if (!error && data) setCategories(data);
     setLoading(false);
   }
