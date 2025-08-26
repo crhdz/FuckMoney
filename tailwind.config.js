@@ -8,6 +8,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+  background: '#ffffff', // Color de fondo personalizado
+  foreground: '#111111', // Color de texto personalizado
         primary: {
           50: '#eff6ff',
           500: '#3b82f6',
