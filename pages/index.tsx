@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import RecentExpenses from "../components/RecentExpenses";
 import { supabase } from "../lib/supabase";
 
 export default function Home() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -108,16 +110,16 @@ export default function Home() {
             Acciones Rápidas
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <button className="btn-primary text-center">
+            <button className="btn-primary text-center" onClick={() => router.push('/expenses/add')}>
               Añadir Gasto Recurrente
             </button>
-            <button className="btn-secondary text-center">
+            <button className="btn-secondary text-center" onClick={() => router.push('/monthly')}>
               Ver Vista Mensual
             </button>
-            <button className="btn-secondary text-center">
+            <button className="btn-secondary text-center" onClick={() => router.push('/annual')}>
               Ver Vista Anual
             </button>
-            <button className="btn-secondary text-center">
+            <button className="btn-secondary text-center" onClick={() => router.push('/predictions')}>
               Ver Predicciones
             </button>
           </div>
