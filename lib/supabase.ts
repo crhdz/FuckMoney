@@ -30,6 +30,11 @@ export interface Category {
 }
 
 // CRUD para gastos
+// Comprobar conexión a la base de datos
+export async function checkSupabaseConnection() {
+  const { error } = await supabase.from('categories').select('id').limit(1);
+  return !error;
+}
 export async function getExpenses(userId: string) {
   return supabase
     .from('expenses')
