@@ -86,7 +86,7 @@ export default function AddExpense() {
     }
     
     // Eliminar gastos de prueba
-    await supabase.from('expenses').delete().eq('name', 'prueba').eq('user_id', user.id)
+    await supabase.from('expenses').delete().eq('name', 'prueba')
     
     // Guardar nuevo gasto
     const { error } = await supabase.from('expenses').insert({
@@ -96,7 +96,6 @@ export default function AddExpense() {
       start_date: formData.startDate,
       end_date: formData.endDate || null,
       is_recurring: formData.isRecurring,
-      user_id: user.id,
       loan_id: formData.loanId || null,
     })
     

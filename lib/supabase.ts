@@ -14,7 +14,6 @@ export interface Expense {
   start_date: string
   end_date?: string
   is_recurring: boolean
-  user_id?: string
   created_at: string
   updated_at: string
   loan_id?: string // Nuevo campo para vincular a préstamos
@@ -53,7 +52,6 @@ export async function getExpenses(userId: string) {
   return supabase
     .from('expenses')
     .select('*')
-    .eq('user_id', userId)
     .order('created_at', { ascending: false })
 }
 
