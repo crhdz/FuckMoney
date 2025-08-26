@@ -58,7 +58,7 @@ export default function CategoriesList() {
   }
 
   async function handleEditSave(id: string) {
-    await supabase.from('categories').update({ name: editName, description: editDescription }).eq('id', id);
+  await supabase.from('categories').update({ name: editName }).eq('id', id);
     setEditingId(null);
     fetchCategories();
   }
@@ -71,7 +71,6 @@ export default function CategoriesList() {
 
     const { data, error } = await supabase.from('categories').insert({
       name: newName,
-      description: newDescription,
       user_id: user.id,
       color: newColor,
       icon: newIcon
