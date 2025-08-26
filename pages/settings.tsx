@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import Layout from '../components/Layout'
+import CategoriesList from '../components/CategoriesList'
 import { checkSupabaseConnection } from '../lib/supabase'
 
 export default function Settings() {
@@ -311,39 +312,7 @@ export default function Settings() {
           <h3 className="text-xl font-semibold text-gray-900 mb-6">
             Gestionar Categorías
           </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { name: 'Hogar', color: 'bg-blue-500', count: 12 },
-              { name: 'Transporte', color: 'bg-green-500', count: 8 },
-              { name: 'Ocio', color: 'bg-purple-500', count: 5 },
-              { name: 'Alimentación', color: 'bg-yellow-500', count: 15 },
-              { name: 'Salud', color: 'bg-red-500', count: 3 },
-              { name: 'Servicios', color: 'bg-pink-500', count: 7 },
-              { name: 'Educación', color: 'bg-indigo-500', count: 2 },
-              { name: 'Otros', color: 'bg-gray-500', count: 4 }
-            ].map((category, index) => (
-              <div
-                key={index}
-                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div className={`w-4 h-4 rounded-full ${category.color}`}></div>
-                  <span className="font-medium text-gray-900">{category.name}</span>
-                </div>
-                <p className="text-sm text-gray-600">
-                  {category.count} gastos
-                </p>
-                <button className="text-xs text-blue-600 hover:text-blue-800 mt-2">
-                  Editar
-                </button>
-              </div>
-            ))}
-          </div>
-          
-          <button className="btn-secondary mt-6">
-            + Añadir Nueva Categoría
-          </button>
+          <CategoriesList />
         </div>
 
         {/* Información de la cuenta */}

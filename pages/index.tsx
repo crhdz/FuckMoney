@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Layout from "../components/Layout";
+import RecentExpenses from "../components/RecentExpenses";
 import { supabase } from "../lib/supabase";
 
 export default function Home() {
@@ -121,18 +122,8 @@ export default function Home() {
             </button>
           </div>
         </div>
-        {/* Recent Expenses */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4">
-            Gastos Recientes
-          </h3>
-          <div className="text-center py-8 text-gray-500">
-            <p>No hay gastos registrados aún.</p>
-            <p className="text-sm mt-2">
-              Comienza añadiendo tu primer gasto recurrente.
-            </p>
-          </div>
-        </div>
+  {/* Gastos recientes reales */}
+  <RecentExpenses user={user} />
       </div>
     </Layout>
   );
