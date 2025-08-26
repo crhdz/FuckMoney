@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
 
 export default function Predictions() {
@@ -12,29 +13,75 @@ export default function Predictions() {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ]
 
-  // Datos de predicción de ejemplo
-  const monthlyPrediction = {
-    recurringExpenses: 1450,
-    estimatedOneTime: 350,
-    total: 1800,
-    confidence: 85
-  }
+  // Estado para datos reales
+  const [user, setUser] = useState<any>(null);
+  const [monthlyPrediction, setMonthlyPrediction] = useState({recurringExpenses: 0, estimatedOneTime: 0, total: 0, confidence: 100});
+  const [annualPrediction, setAnnualPrediction] = useState({recurringExpenses: 0, estimatedOneTime: 0, total: 0, monthlyAverage: 0, confidence: 100});
+  const [upcomingExpenses, setUpcomingExpenses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const annualPrediction = {
-    recurringExpenses: 17400,
-    estimatedOneTime: 4200,
-    total: 21600,
-    monthlyAverage: 1800,
-    confidence: 78
-  }
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user || null);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => {
+      listener.subscription.unsubscribe();
+    };
+  }, []);
 
-  const upcomingExpenses = [
-    { name: 'Alquiler', amount: 800, date: '2025-02-01', category: 'Hogar', isRecurring: true },
-    { name: 'Seguro del coche', amount: 250, date: '2025-02-15', category: 'Transporte', isRecurring: false },
-    { name: 'Netflix', amount: 15.99, date: '2025-02-05', category: 'Ocio', isRecurring: true },
-    { name: 'Gimnasio', amount: 45, date: '2025-02-01', category: 'Salud', isRecurring: true },
-    { name: 'Internet', amount: 39.99, date: '2025-02-20', category: 'Servicios', isRecurring: true },
-  ]
+  useEffect(() => {
+    if (!user) return;
+    setLoading(true);
+    (async () => {
+      // Predicción mensual
+      if (predictionType === 'monthly') {
+        const monthNum = targetMonth.toString().padStart(2, '0');
+        const start = `${targetYear}-${monthNum}-01`;
+        const end = `${targetYear}-${monthNum}-31`;
+        const { data, error } = await supabase
+          .from('expenses')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('created_at', start)
+          .lte('created_at', end);
+        if (!error && data) {
+          const recurring = data.filter(e => e.is_recurring).reduce((sum, e) => sum + (e.amount || 0), 0);
+          const oneTime = data.filter(e => !e.is_recurring).reduce((sum, e) => sum + (e.amount || 0), 0);
+          setMonthlyPrediction({
+            recurringExpenses: recurring,
+            estimatedOneTime: oneTime,
+            total: recurring + oneTime,
+            confidence: 100
+          });
+          setUpcomingExpenses(data.filter(e => new Date(e.created_at) > new Date()));
+        }
+      } else {
+        // Predicción anual
+        const { data, error } = await supabase
+          .from('expenses')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('created_at', `${targetYear}-01-01`)
+          .lte('created_at', `${targetYear}-12-31`);
+        if (!error && data) {
+          const recurring = data.filter(e => e.is_recurring).reduce((sum, e) => sum + (e.amount || 0), 0);
+          const oneTime = data.filter(e => !e.is_recurring).reduce((sum, e) => sum + (e.amount || 0), 0);
+          setAnnualPrediction({
+            recurringExpenses: recurring,
+            estimatedOneTime: oneTime,
+            total: recurring + oneTime,
+            monthlyAverage: (recurring + oneTime) / 12,
+            confidence: 100
+          });
+          setUpcomingExpenses(data.filter(e => new Date(e.created_at) > new Date()));
+        }
+      }
+      setLoading(false);
+    })();
+  }, [user, predictionType, targetMonth, targetYear]);
 
   const budgetComparison = budget ? {
     budget: parseFloat(budget),
