@@ -119,8 +119,11 @@ export default function Home() {
             <button className="btn-secondary text-center" onClick={() => router.push('/annual')}>
               Ver Vista Anual
             </button>
-            <button className="btn-secondary text-center" onClick={() => router.push('/predictions')}>
-              Ver Predicciones
+            <button className="btn-secondary text-center" onClick={() => router.push('/predictions-monthly')}>
+              Ver Predicciones Mensuales
+            </button>
+            <button className="btn-secondary text-center" onClick={() => router.push('/predictions-annual')}>
+              Ver Predicciones Anuales
             </button>
           </div>
         </div>

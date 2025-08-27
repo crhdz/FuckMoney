@@ -9,7 +9,8 @@ import {
   Settings,
   Menu,
   CreditCard,
-  List
+  List,
+  CalendarDays
 } from 'lucide-react'
 
 interface LayoutProps {
@@ -27,7 +28,8 @@ export default function Layout({ children, title = "FuckMoney" }: LayoutProps) {
     { name: 'Préstamos', href: '/loans', icon: CreditCard },
     { name: 'Vista Anual', href: '/annual', icon: Calendar },
     { name: 'Vista Mensual', href: '/monthly', icon: BarChart3 },
-    { name: 'Predicciones', href: '/predictions', icon: TrendingUp },
+    { name: 'Predicciones Mensuales', href: '/predictions-monthly', icon: TrendingUp },
+    { name: 'Predicciones Anuales', href: '/predictions-annual', icon: CalendarDays },
     { name: 'Configuración', href: '/settings', icon: Settings },
   ]
 
