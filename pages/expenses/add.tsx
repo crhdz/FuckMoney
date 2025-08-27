@@ -97,6 +97,7 @@ export default function AddExpense() {
       end_date: formData.endDate || null,
       is_recurring: formData.isRecurring,
       loan_id: formData.loanId || null,
+      user_id: user.id
     })
     
     setLoading(false)
