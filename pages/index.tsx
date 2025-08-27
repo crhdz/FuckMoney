@@ -239,6 +239,8 @@ export default function Home() {
             <p className="text-sm text-gray-600 mb-1">Préstamos</p>
             <p className="text-xl font-semibold text-gray-900">{formatEuroNoDecimals(stats.monthlyLoanPayments)}</p>
             <p className="text-xs text-gray-500">Pago mensual</p>
+          </div>
+
           <div className="bg-white border rounded-lg p-4">
             <p className="text-sm text-gray-600 mb-1">Deuda Total</p>
             <p className="text-xl font-semibold text-gray-900">{formatEuroNoDecimals(stats.remainingLoanAmount)}</p>
@@ -303,14 +305,6 @@ export default function Home() {
                 className="w-full border border-gray-300 hover:bg-gray-50 text-gray-900 font-medium py-2 px-3 rounded text-sm transition-colors"
               >
                 Ver Predicciones
-              </button>
-              
-              <button 
-                onClick={() => router.push('/settings')}
-                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
-              >
-                <span className="mr-2">⚙️</span>
-                Configuración
               </button>
             </div>
           </div>
