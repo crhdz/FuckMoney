@@ -12,15 +12,6 @@ export default function MonthlyView() {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ]
 
-  const categories = [
-    { name: 'Hogar', color: 'bg-blue-500', amount: 850 },
-    { name: 'Transporte', color: 'bg-green-500', amount: 320 },
-    { name: 'Ocio', color: 'bg-purple-500', amount: 180 },
-    { name: 'Alimentación', color: 'bg-yellow-500', amount: 450 },
-    { name: 'Servicios', color: 'bg-pink-500', amount: 125 },
-    { name: 'Otros', color: 'bg-gray-500', amount: 75 }
-  ]
-
   const [user, setUser] = useState<any>(null);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +48,38 @@ export default function MonthlyView() {
 
   const totalMonth = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
   const totalExpenses = expenses.length;
+
+  // Calcular gastos por categoría desde los datos reales
+  const categoriesData: Record<string, { name: string; amount: number; count: number }> = {};
+  
+  expenses.forEach(expense => {
+    const category = expense.category || 'Sin categoría';
+    if (!categoriesData[category]) {
+      categoriesData[category] = { name: category, amount: 0, count: 0 };
+    }
+    categoriesData[category].amount += expense.amount || 0;
+    categoriesData[category].count += 1;
+  });
+
+  // Convertir a array y ordenar por cantidad
+  const categoriesArray = Object.values(categoriesData);
+  const categories = categoriesArray
+    .sort((a, b) => b.amount - a.amount)
+    .map((cat, index) => ({
+      name: cat.name,
+      amount: cat.amount,
+      count: cat.count,
+      color: getCategoryColor(index)
+    }));
+
+  // Función para asignar colores a las categorías
+  function getCategoryColor(index: number) {
+    const colors = [
+      'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-yellow-500', 
+      'bg-pink-500', 'bg-red-500', 'bg-indigo-500', 'bg-gray-500'
+    ];
+    return colors[index % colors.length];
+  }
 
   const sortedExpenses = [...expenses].sort((a, b) => {
     switch (sortBy) {
@@ -140,7 +163,7 @@ export default function MonthlyView() {
                 Gasto Promedio
               </h3>
               <p className="text-3xl font-bold text-purple-600">
-                €{(totalMonth / totalExpenses).toFixed(0)}
+                €{totalExpenses > 0 ? (totalMonth / totalExpenses).toFixed(0) : '0'}
               </p>
             </div>
           </div>
@@ -155,31 +178,39 @@ export default function MonthlyView() {
             
             {/* Gráfico circular simulado */}
             <div className="space-y-4">
-              {categories.map((category, index) => {
-                const percentage = (category.amount / totalMonth) * 100
-                
-                return (
-                  <div key={index} className="flex items-center gap-4">
-                    <div className={`w-4 h-4 rounded-full ${category.color}`}></div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium text-gray-700">
-                          {category.name}
-                        </span>
-                        <span className="text-sm text-gray-600">
-                          €{category.amount} ({percentage.toFixed(1)}%)
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full ${category.color}`}
-                          style={{ width: `${percentage}%` }}
-                        ></div>
+              {loading ? (
+                <div className="text-gray-500">Cargando datos...</div>
+              ) : categories.length === 0 ? (
+                <div className="text-gray-500 text-center py-8">
+                  No hay gastos registrados para mostrar categorías.
+                </div>
+              ) : (
+                categories.map((category, index) => {
+                  const percentage = totalMonth > 0 ? (category.amount / totalMonth) * 100 : 0;
+                  
+                  return (
+                    <div key={index} className="flex items-center gap-4">
+                      <div className={`w-4 h-4 rounded-full ${category.color}`}></div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm font-medium text-gray-700">
+                            {category.name} ({category.count} gasto{category.count !== 1 ? 's' : ''})
+                          </span>
+                          <span className="text-sm text-gray-600">
+                            €{category.amount.toFixed(2)} ({percentage.toFixed(1)}%)
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${category.color}`}
+                            style={{ width: `${percentage}%` }}
+                          ></div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
 
