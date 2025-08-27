@@ -2,36 +2,23 @@ import React, { useState, useEffect } from 'react'
 import Layout from '../components/Layout'
 import { supabase } from '../lib/supabase'
 
-interface MonthlyPrediction {
+interface MonthlyData {
   recurringExpenses: number
-  estimatedOneTime: number
-  total: number
-  confidence: number
-  historicalAverage: number
-  trend: 'up' | 'down' | 'stable'
   breakdown: {
     category: string
     amount: number
-    confidence: number
   }[]
 }
 
-export default function MonthlyPredictions() {
+export default function MonthlyRecurring() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
-  const [monthlyData, setMonthlyData] = useState<MonthlyPrediction>({
+  const [monthlyData, setMonthlyData] = useState<MonthlyData>({
     recurringExpenses: 0,
-    estimatedOneTime: 0,
-    total: 0,
-    confidence: 0,
-    historicalAverage: 0,
-    trend: 'stable',
     breakdown: []
   })
-  const [budget, setBudget] = useState('')
-  const [budgetComparison, setBudgetComparison] = useState<any>(null)
   const [upcomingExpenses, setUpcomingExpenses] = useState<any[]>([])
 
   const months = [
@@ -53,31 +40,11 @@ export default function MonthlyPredictions() {
 
   useEffect(() => {
     if (user) {
-      calculateMonthlyPrediction()
+      calculateMonthlyRecurring()
     }
   }, [user, selectedMonth, selectedYear])
 
-  useEffect(() => {
-    if (budget) {
-      const budgetNum = parseFloat(budget)
-      if (!isNaN(budgetNum)) {
-        const predicted = monthlyData.total
-        const difference = budgetNum - predicted
-        const percentage = budgetNum > 0 ? (difference / budgetNum) * 100 : 0
-        
-        setBudgetComparison({
-          budget: budgetNum,
-          predicted,
-          difference,
-          percentage
-        })
-      }
-    } else {
-      setBudgetComparison(null)
-    }
-  }, [budget, monthlyData])
-
-  async function calculateMonthlyPrediction() {
+  async function calculateMonthlyRecurring() {
     if (!user) return
     setLoading(true)
 
@@ -88,14 +55,6 @@ export default function MonthlyPredictions() {
         .select('*')
         .eq('user_id', user.id)
         .eq('is_recurring', true)
-
-      // Obtener gastos históricos del mismo mes en años anteriores para mejorar predicción
-      const { data: historicalExpenses } = await supabase
-        .from('expenses')
-        .select('*')
-        .eq('user_id', user.id)
-        .gte('created_at', `${selectedYear - 2}-${(selectedMonth + 1).toString().padStart(2, '0')}-01`)
-        .lt('created_at', `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-01`)
 
       // Calcular gastos recurrentes del mes
       const monthlyRecurring = (recurringExpenses || []).reduce((total, expense) => {
@@ -116,26 +75,6 @@ export default function MonthlyPredictions() {
         }
         return total + monthlyAmount
       }, 0)
-
-      // Calcular promedio histórico de gastos no recurrentes para este mes
-      const historicalByMonth = (historicalExpenses || [])
-        .filter(expense => {
-          const expenseDate = new Date(expense.created_at)
-          return expenseDate.getMonth() === selectedMonth && !expense.is_recurring
-        })
-        .reduce((total, expense) => total + expense.amount, 0)
-
-      const historicalMonths = Math.max(1, 
-        (historicalExpenses || [])
-          .filter(expense => {
-            const expenseDate = new Date(expense.created_at)
-            return expenseDate.getMonth() === selectedMonth && !expense.is_recurring
-          })
-          .length > 0 ? 2 : 1
-      )
-
-      const historicalAverage = historicalByMonth / historicalMonths
-      const estimatedOneTime = Math.max(historicalAverage * 1.1, monthlyRecurring * 0.2) // Mínimo 20% de recurrentes
 
       // Calcular breakdown por categoría
       const categoryBreakdown = (recurringExpenses || [])
@@ -163,35 +102,14 @@ export default function MonthlyPredictions() {
           } else {
             acc.push({
               category: expense.category || 'Sin categoría',
-              amount: monthlyAmount,
-              confidence: 90
+              amount: monthlyAmount
             })
           }
           return acc
         }, [])
 
-      // Calcular confianza basándose en datos históricos
-      const hasHistoricalData = (historicalExpenses || []).length > 0
-      const confidence = hasHistoricalData ? 
-        Math.min(90, 50 + (historicalMonths * 15)) : 65
-
-      // Determinar tendencia
-      const currentMonthTotal = monthlyRecurring + estimatedOneTime
-      let trend: 'up' | 'down' | 'stable' = 'stable'
-      
-      if (hasHistoricalData && historicalAverage > 0) {
-        const change = (currentMonthTotal - historicalAverage) / historicalAverage
-        if (change > 0.1) trend = 'up'
-        else if (change < -0.1) trend = 'down'
-      }
-
       setMonthlyData({
         recurringExpenses: monthlyRecurring,
-        estimatedOneTime,
-        total: monthlyRecurring + estimatedOneTime,
-        confidence,
-        historicalAverage,
-        trend,
         breakdown: categoryBreakdown
       })
 
@@ -215,7 +133,7 @@ export default function MonthlyPredictions() {
       setUpcomingExpenses(upcomingList)
 
     } catch (error) {
-      console.error('Error calculating predictions:', error)
+      console.error('Error calculating recurring expenses:', error)
     } finally {
       setLoading(false)
     }
@@ -243,10 +161,10 @@ export default function MonthlyPredictions() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                Predicciones Mensuales
+                Gastos Recurrentes Mensuales
               </h1>
               <p className="text-gray-600">
-                Estimaciones detalladas para {months[selectedMonth]} {selectedYear}
+                Gastos fijos confirmados para {months[selectedMonth]} {selectedYear}
               </p>
             </div>
             
@@ -275,54 +193,23 @@ export default function MonthlyPredictions() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Predicción principal */}
+          {/* Gastos recurrentes */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-xl font-semibold text-gray-900 mb-6">
-              Predicción del Mes
+              Gastos Recurrentes del Mes
             </h3>
             
             {loading ? (
               <div className="text-center py-8">
-                <div className="text-gray-500">Calculando predicciones...</div>
+                <div className="text-gray-500">Cargando gastos recurrentes...</div>
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                  <span className="font-medium text-gray-700">Gastos Recurrentes</span>
-                  <span className="font-bold text-blue-600">
+                <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg">
+                  <span className="text-lg font-semibold text-gray-900">Total Gastos Recurrentes</span>
+                  <span className="text-2xl font-bold text-blue-600">
                     €{monthlyData.recurringExpenses.toLocaleString()}
                   </span>
-                </div>
-                
-                <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
-                  <span className="font-medium text-gray-700">Gastos Estimados Puntuales</span>
-                  <span className="font-bold text-yellow-600">
-                    €{monthlyData.estimatedOneTime.toLocaleString()}
-                  </span>
-                </div>
-                
-                <div className="border-t pt-4">
-                  <div className="flex justify-between items-center p-4 bg-gray-100 rounded-lg">
-                    <span className="text-lg font-semibold text-gray-900">Total Estimado</span>
-                    <span className="text-2xl font-bold text-gray-900">
-                      €{monthlyData.total.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="mt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Confianza de la predicción</span>
-                    <span className="text-sm font-bold text-gray-900">
-                      {monthlyData.confidence}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-green-500 h-2 rounded-full"
-                      style={{ width: `${monthlyData.confidence}%` }}
-                    ></div>
-                  </div>
                 </div>
 
                 {/* Breakdown por categoría */}
@@ -347,65 +234,27 @@ export default function MonthlyPredictions() {
             )}
           </div>
 
-          {/* Comparación con presupuesto */}
+          {/* Información adicional */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-xl font-semibold text-gray-900 mb-6">
-              Comparación con Presupuesto
+              Información del Mes
             </h3>
             
             <div className="space-y-4">
-              <div>
-                <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-2">
-                  Tu presupuesto mensual (€)
-                </label>
-                <input
-                  type="number"
-                  id="budget"
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  className="input w-full"
-                  placeholder="Introduce tu presupuesto..."
-                  step="0.01"
-                />
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="font-semibold text-blue-800 mb-2">📊 Resumen</h4>
+                <p className="text-blue-700 text-sm">
+                  Estos son tus gastos recurrentes confirmados para {months[selectedMonth]} {selectedYear}. 
+                  Son valores seguros basados en tus suscripciones y gastos fijos registrados.
+                </p>
               </div>
               
-              {budgetComparison && (
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="font-medium text-gray-700">Tu Presupuesto</span>
-                    <span className="font-bold text-gray-900">
-                      €{budgetComparison.budget.toLocaleString()}
-                    </span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span className="font-medium text-gray-700">Gasto Predicho</span>
-                    <span className="font-bold text-gray-900">
-                      €{budgetComparison.predicted.toLocaleString()}
-                    </span>
-                  </div>
-                  
-                  <div className={`flex justify-between items-center p-3 rounded-lg ${
-                    budgetComparison.difference >= 0 ? 'bg-green-50' : 'bg-red-50'
-                  }`}>
-                    <span className="font-medium text-gray-700">Diferencia</span>
-                    <span className={`font-bold ${
-                      budgetComparison.difference >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {budgetComparison.difference >= 0 ? '+' : ''}€{budgetComparison.difference.toFixed(0)}
-                      <span className="text-sm ml-1">
-                        ({budgetComparison.percentage >= 0 ? '+' : ''}{budgetComparison.percentage.toFixed(1)}%)
-                      </span>
-                    </span>
-                  </div>
-                  
-                  {budgetComparison.difference < 0 && (
-                    <div className="p-3 bg-red-100 border border-red-200 rounded-lg">
-                      <p className="text-red-800 text-sm">
-                        ⚠️ <strong>Alerta:</strong> Tus gastos predichos superan tu presupuesto en €{Math.abs(budgetComparison.difference).toFixed(0)}
-                      </p>
-                    </div>
-                  )}
+              {monthlyData.recurringExpenses > 0 && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h4 className="font-semibold text-green-800 mb-2">✓ Gastos Confirmados</h4>
+                  <p className="text-green-700 text-sm">
+                    Total de gastos recurrentes: €{monthlyData.recurringExpenses.toFixed(0)}
+                  </p>
                 </div>
               )}
             </div>
@@ -461,40 +310,6 @@ export default function MonthlyPredictions() {
                 </div>
               </>
             )}
-          </div>
-        </div>
-
-        {/* Análisis de tendencias */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6">
-            Análisis de Tendencias
-          </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">Promedio Histórico</p>
-              <p className="text-xl font-bold text-gray-900">
-                €{monthlyData.historicalAverage.toFixed(0)}
-              </p>
-            </div>
-            
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">Predicción Actual</p>
-              <p className="text-xl font-bold text-gray-900">
-                €{monthlyData.total.toFixed(0)}
-              </p>
-            </div>
-            
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">Tendencia</p>
-              <p className={`text-xl font-bold ${
-                monthlyData.trend === 'up' ? 'text-red-600' :
-                monthlyData.trend === 'down' ? 'text-green-600' : 'text-gray-900'
-              }`}>
-                {monthlyData.trend === 'up' ? '↗️ Subida' :
-                 monthlyData.trend === 'down' ? '↘️ Bajada' : '➡️ Estable'}
-              </p>
-            </div>
           </div>
         </div>
       </div>
