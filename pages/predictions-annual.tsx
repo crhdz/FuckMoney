@@ -103,7 +103,15 @@ export default function AnnualRecurring() {
               monthlyAmount = index % 3 === 0 ? expense.amount : 0
               break
             case 'yearly':
-              monthlyAmount = expense.amount / 12 // Distribuir anualmente entre 12 meses
+              // Para gastos anuales, aplicar solo en el mes correspondiente según start_date
+              if (expense.start_date) {
+                const startDate = new Date(expense.start_date)
+                const expenseMonth = startDate.getMonth() // 0-11
+                monthlyAmount = expenseMonth === index ? expense.amount : 0
+              } else {
+                // Si no hay start_date, aplicar en enero por defecto
+                monthlyAmount = index === 0 ? expense.amount : 0
+              }
               break
           }
           return total + monthlyAmount

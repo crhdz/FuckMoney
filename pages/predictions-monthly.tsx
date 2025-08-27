@@ -70,7 +70,15 @@ export default function MonthlyRecurring() {
             monthlyAmount = expense.amount / 3
             break
           case 'yearly':
-            monthlyAmount = expense.amount / 12
+            // Para gastos anuales, verificar si corresponde al mes seleccionado
+            if (expense.start_date) {
+              const startDate = new Date(expense.start_date)
+              const expenseMonth = startDate.getMonth() // 0-11
+              monthlyAmount = expenseMonth === selectedMonth ? expense.amount : 0
+            } else {
+              // Si no hay start_date, no incluir en el cálculo mensual
+              monthlyAmount = 0
+            }
             break
         }
         return total + monthlyAmount
@@ -93,7 +101,14 @@ export default function MonthlyRecurring() {
               monthlyAmount = expense.amount / 3
               break
             case 'yearly':
-              monthlyAmount = expense.amount / 12
+              // Para gastos anuales, verificar si corresponde al mes seleccionado
+              if (expense.start_date) {
+                const startDate = new Date(expense.start_date)
+                const expenseMonth = startDate.getMonth() // 0-11
+                monthlyAmount = expenseMonth === selectedMonth ? expense.amount : 0
+              } else {
+                monthlyAmount = 0
+              }
               break
           }
 
