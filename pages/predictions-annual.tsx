@@ -147,6 +147,7 @@ export default function AnnualRecurring() {
 
           if (existingCategory) {
             existingCategory.yearlyAmount += yearlyAmount
+            existingCategory.monthlyAverage = existingCategory.yearlyAmount / 12
           } else {
             acc.push({
               category: expense.category || 'Sin categoría',
@@ -257,7 +258,7 @@ export default function AnnualRecurring() {
                         Promedio Mensual
                       </h3>
                       <p className="text-3xl font-bold text-green-600">
-                        €{yearlyData.averageMonth.toLocaleString()}
+                        €{yearlyData.averageMonth.toFixed(2)}
                       </p>
                     </div>
                   </div>
