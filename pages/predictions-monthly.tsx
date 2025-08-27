@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Layout from '../components/Layout'
 import { supabase } from '../lib/supabase'
+import { formatEuro, formatEuroNoDecimals } from '../lib/formatters'
 
 interface MonthlyData {
   recurringExpenses: number
@@ -238,7 +239,7 @@ export default function MonthlyRecurring() {
                 <div className="flex justify-between items-center p-4 bg-blue-50 rounded-lg">
                   <span className="text-lg font-semibold text-gray-900">Total Gastos Recurrentes</span>
                   <span className="text-2xl font-bold text-blue-600">
-                    €{monthlyData.recurringExpenses.toLocaleString()}
+                    {formatEuroNoDecimals(monthlyData.recurringExpenses)}
                   </span>
                 </div>
 
@@ -253,7 +254,7 @@ export default function MonthlyRecurring() {
                         <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                           <span className="text-sm text-gray-700">{item.category}</span>
                           <span className="text-sm font-semibold text-gray-900">
-                            €{item.amount.toFixed(0)}
+                            {formatEuroNoDecimals(item.amount)}
                           </span>
                         </div>
                       ))}
@@ -301,7 +302,7 @@ export default function MonthlyRecurring() {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">
-                        €{expense.amount}
+                        {formatEuro(expense.amount)}
                       </p>
                     </div>
                   </div>
@@ -309,7 +310,7 @@ export default function MonthlyRecurring() {
                 
                 <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-blue-800">
-                    <strong>Total gastos programados:</strong> €{upcomingExpenses.reduce((sum, expense) => sum + expense.amount, 0).toFixed(2)}
+                    <strong>Total gastos programados:</strong> {formatEuro(upcomingExpenses.reduce((sum, expense) => sum + expense.amount, 0))}
                   </p>
                 </div>
               </>

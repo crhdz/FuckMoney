@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { formatEuro, formatEuroNoDecimals } from '../lib/formatters';
 
 export default function RecentExpenses({ user }: { user: any }) {
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -40,7 +41,7 @@ export default function RecentExpenses({ user }: { user: any }) {
               <span className="font-medium text-gray-900">{exp.name}</span>
               <span className="ml-2 text-gray-500">({exp.frequency})</span>
             </div>
-            <span className="font-bold text-blue-600">€{exp.amount}</span>
+            <span className="font-bold text-blue-600">{formatEuro(exp.amount)}</span>
           </li>
         ))}
       </ul>

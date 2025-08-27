@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Layout from '../components/Layout'
 import { supabase, getLoans, addLoan, updateLoan, deleteLoan, calculateLoanInfo } from '../lib/supabase'
+import { formatEuro, formatEuroNoDecimals } from '../lib/formatters'
 
 export default function Loans() {
   const [loans, setLoans] = useState<any[]>([])
@@ -181,13 +182,13 @@ export default function Loans() {
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Pagos Mensuales</h3>
             <p className="text-3xl font-bold text-orange-600">
-              €{loans.reduce((sum, loan) => sum + loan.monthly_payment, 0).toFixed(2)}
+              {formatEuro(loans.reduce((sum, loan) => sum + loan.monthly_payment, 0))}
             </p>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Por Pagar Total</h3>
             <p className="text-3xl font-bold text-red-600">
-              €{loans.reduce((sum, loan) => sum + (loan.loanInfo?.remainingAmount || 0), 0).toFixed(2)}
+              {formatEuro(loans.reduce((sum, loan) => sum + (loan.loanInfo?.remainingAmount || 0), 0))}
             </p>
           </div>
           <div className="bg-white rounded-lg shadow p-6">
@@ -258,7 +259,7 @@ export default function Loans() {
                       <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                           <span className="text-gray-500">Pago mensual:</span>
-                          <p className="font-semibold">€{loan.monthly_payment}</p>
+                          <p className="font-semibold">{formatEuro(loan.monthly_payment)}</p>
                         </div>
                         <div>
                           <span className="text-gray-500">Meses restantes:</span>
@@ -266,7 +267,7 @@ export default function Loans() {
                         </div>
                         <div>
                           <span className="text-gray-500">Falta por pagar:</span>
-                          <p className="font-semibold text-red-600">€{loan.loanInfo?.remainingAmount?.toFixed(2) || '0.00'}</p>
+                          <p className="font-semibold text-red-600">{formatEuro(loan.loanInfo?.remainingAmount || 0)}</p>
                         </div>
                         <div>
                           <span className="text-gray-500">Fecha fin:</span>

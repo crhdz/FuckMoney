@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Layout from '../components/Layout'
 import { supabase } from '../lib/supabase'
+import { formatEuro, formatEuroNoDecimals } from '../lib/formatters'
 
 interface MonthlyBreakdown {
   month: string
@@ -247,7 +248,7 @@ export default function AnnualRecurring() {
                         Total Anual
                       </h3>
                       <p className="text-3xl font-bold text-blue-600">
-                        €{yearlyData.totalRecurring.toLocaleString()}
+                        {formatEuroNoDecimals(yearlyData.totalRecurring)}
                       </p>
                     </div>
                   </div>
@@ -258,7 +259,7 @@ export default function AnnualRecurring() {
                         Promedio Mensual
                       </h3>
                       <p className="text-3xl font-bold text-green-600">
-                        €{yearlyData.averageMonth.toFixed(2)}
+                        {formatEuro(yearlyData.averageMonth)}
                       </p>
                     </div>
                   </div>
@@ -269,7 +270,7 @@ export default function AnnualRecurring() {
                         Gastos Confirmados
                       </h3>
                       <p className="text-3xl font-bold text-purple-600">
-                        €{yearlyData.totalRecurring.toLocaleString()}
+                        {formatEuroNoDecimals(yearlyData.totalRecurring)}
                       </p>
                     </div>
                   </div>
@@ -296,7 +297,7 @@ export default function AnnualRecurring() {
                                   {category.category}
                                 </span>
                                 <span className="text-sm text-gray-600">
-                                  €{category.yearlyAmount.toFixed(0)} ({category.percentage.toFixed(1)}%)
+                                  {formatEuroNoDecimals(category.yearlyAmount)} ({category.percentage.toFixed(1)}%)
                                 </span>
                               </div>
                               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -306,7 +307,7 @@ export default function AnnualRecurring() {
                                 ></div>
                               </div>
                               <div className="text-xs text-gray-500 mt-1">
-                                Promedio mensual: €{category.monthlyAverage.toFixed(0)}
+                                Promedio mensual: {formatEuroNoDecimals(category.monthlyAverage)}
                               </div>
                             </div>
                           </div>
@@ -347,7 +348,7 @@ export default function AnnualRecurring() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">
-                              €{month.recurringExpenses.toFixed(0)}
+                              {formatEuroNoDecimals(month.recurringExpenses)}
                             </div>
                           </td>
                         </tr>
@@ -362,13 +363,13 @@ export default function AnnualRecurring() {
                     <div>
                       <p className="text-sm text-gray-600">Total Anual</p>
                       <p className="text-lg font-semibold text-blue-600">
-                        €{yearlyData.totalRecurring.toFixed(0)}
+                        {formatEuroNoDecimals(yearlyData.totalRecurring)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Promedio Mensual</p>
                       <p className="text-lg font-semibold text-green-600">
-                        €{yearlyData.averageMonth.toFixed(0)}
+                        {formatEuroNoDecimals(yearlyData.averageMonth)}
                       </p>
                     </div>
                   </div>

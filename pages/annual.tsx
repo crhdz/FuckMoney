@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
+import { formatEuro, formatEuroNoDecimals } from '../lib/formatters'
 
 export default function AnnualView() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
@@ -124,7 +125,7 @@ export default function AnnualView() {
                 Total Anual
               </h3>
               <p className="text-3xl font-bold text-blue-600">
-                €{totalYear.toLocaleString()}
+                {formatEuroNoDecimals(totalYear)}
               </p>
             </div>
           </div>
@@ -135,7 +136,7 @@ export default function AnnualView() {
                 Promedio Mensual
               </h3>
               <p className="text-3xl font-bold text-green-600">
-                €{averageMonth.toFixed(0)}
+                {formatEuroNoDecimals(averageMonth)}
               </p>
             </div>
           </div>
@@ -146,7 +147,7 @@ export default function AnnualView() {
                 Mes Más Costoso
               </h3>
               <p className="text-3xl font-bold text-red-600">
-                €{Math.max(...monthlyData.map(m => m.total))}
+                {formatEuroNoDecimals(Math.max(...monthlyData.map(m => m.total)))}
               </p>
             </div>
           </div>
@@ -168,7 +169,7 @@ export default function AnnualView() {
                   <div className="w-20 text-sm font-medium text-gray-700">{data.month}</div>
                   <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
                     <div className="bg-blue-500 h-6 rounded-full flex items-center justify-end pr-2" style={{ width: `${percentage}%` }}>
-                      <span className="text-white text-xs font-medium">€{data.total}</span>
+                      <span className="text-white text-xs font-medium">{formatEuroNoDecimals(data.total)}</span>
                     </div>
                   </div>
                   <div className="w-16 text-sm text-gray-500">{data.expenses} gastos</div>
@@ -200,7 +201,7 @@ export default function AnnualView() {
                 >
                   <h4 className="font-semibold text-gray-900">{month}</h4>
                   <p className="text-2xl font-bold text-blue-600 mt-2">
-                    €{monthData.total}
+                    {formatEuroNoDecimals(monthData.total)}
                   </p>
                   <p className="text-sm text-gray-600">
                     {monthData.expenses} gastos
@@ -224,7 +225,7 @@ export default function AnnualView() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-blue-800">
               <strong>Estimación:</strong> Basándose en tus gastos actuales, necesitarás aproximadamente{' '}
-              <span className="font-bold">€{totalYear.toLocaleString()}</span> para cubrir todos tus gastos en {selectedYear}.
+              <span className="font-bold">{formatEuroNoDecimals(totalYear)}</span> para cubrir todos tus gastos en {selectedYear}.
             </p>
           </div>
         </div>

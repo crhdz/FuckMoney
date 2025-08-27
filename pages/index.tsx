@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import { supabase } from "../lib/supabase";
+import { formatEuro, formatEuroNoDecimals } from "../lib/formatters";
 
 interface DashboardStats {
   monthlyRecurring: number;
@@ -209,83 +210,39 @@ export default function Home() {
   return (
     <Layout title="Dashboard - FuckMoney">
       <div className="space-y-6">
-        {/* Header con saludo personalizado */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-6 text-white">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">
-                ¡Hola, {user.user_metadata?.full_name || user.email}! 👋
-              </h1>
-              <p className="text-blue-100">
-                Aquí tienes tu resumen financiero del {new Date().toLocaleDateString('es-ES', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </p>
-            </div>
-            <button 
-              onClick={handleLogout} 
-              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              Cerrar sesión
-            </button>
-          </div>
+        {/* Header minimalista */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+          <button 
+            onClick={handleLogout} 
+            className="text-gray-600 hover:text-gray-800 text-sm transition-colors"
+          >
+            Cerrar sesión
+          </button>
         </div>
 
         {/* Métricas principales */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Este Mes</p>
-                <p className="text-2xl font-bold text-gray-900">€{stats.monthlyRecurring.toFixed(0)}</p>
-                <p className="text-xs text-blue-600">Gastos recurrentes</p>
-              </div>
-              <div className="bg-blue-100 p-3 rounded-full">
-                <span className="text-2xl">📅</span>
-              </div>
-            </div>
+          <div className="bg-white border rounded-lg p-4">
+            <p className="text-sm text-gray-600 mb-1">Este Mes</p>
+            <p className="text-xl font-semibold text-gray-900">{formatEuroNoDecimals(stats.monthlyRecurring)}</p>
+            <p className="text-xs text-gray-500">Gastos recurrentes</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Este Año</p>
-                <p className="text-2xl font-bold text-gray-900">€{stats.yearlyRecurring.toFixed(0)}</p>
-                <p className="text-xs text-green-600">Proyección anual</p>
-              </div>
-              <div className="bg-green-100 p-3 rounded-full">
-                <span className="text-2xl">📊</span>
-              </div>
-            </div>
+          <div className="bg-white border rounded-lg p-4">
+            <p className="text-sm text-gray-600 mb-1">Este Año</p>
+            <p className="text-xl font-semibold text-gray-900">{formatEuroNoDecimals(stats.yearlyRecurring)}</p>
+            <p className="text-xs text-gray-500">Proyección anual</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Préstamos</p>
-                <p className="text-2xl font-bold text-gray-900">€{stats.monthlyLoanPayments.toFixed(0)}</p>
-                <p className="text-xs text-orange-600">Pago mensual</p>
-              </div>
-              <div className="bg-orange-100 p-3 rounded-full">
-                <span className="text-2xl">🏦</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Deuda Total</p>
-                <p className="text-2xl font-bold text-gray-900">€{stats.remainingLoanAmount.toFixed(0)}</p>
-                <p className="text-xs text-red-600">Por pagar</p>
-              </div>
-              <div className="bg-red-100 p-3 rounded-full">
-                <span className="text-2xl">💳</span>
-              </div>
-            </div>
+          <div className="bg-white border rounded-lg p-4">
+            <p className="text-sm text-gray-600 mb-1">Préstamos</p>
+            <p className="text-xl font-semibold text-gray-900">{formatEuroNoDecimals(stats.monthlyLoanPayments)}</p>
+            <p className="text-xs text-gray-500">Pago mensual</p>
+          <div className="bg-white border rounded-lg p-4">
+            <p className="text-sm text-gray-600 mb-1">Deuda Total</p>
+            <p className="text-xl font-semibold text-gray-900">{formatEuroNoDecimals(stats.remainingLoanAmount)}</p>
+            <p className="text-xs text-gray-500">Por pagar</p>
           </div>
         </div>
 
@@ -293,64 +250,58 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Próximos gastos */}
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-lg p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-              <span className="mr-2">⏰</span>
+          <div className="lg:col-span-2 bg-white border rounded-lg p-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
               Próximos Gastos
             </h3>
             
             {stats.nextExpenses.length > 0 ? (
               <div className="space-y-3">
                 {stats.nextExpenses.map((expense, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div key={index} className="flex items-center justify-between p-3 border-b last:border-b-0">
                     <div>
                       <h4 className="font-medium text-gray-900">{expense.name}</h4>
                       <p className="text-sm text-gray-600">{expense.category}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-gray-900">€{expense.amount}</p>
-                      <p className="text-xs text-blue-600">En {expense.daysUntil} días</p>
+                      <p className="font-semibold text-gray-900">{formatEuro(expense.amount)}</p>
+                      <p className="text-xs text-gray-500">En {expense.daysUntil} días</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
-                <span className="text-4xl block mb-2">🎉</span>
                 <p>No tienes gastos programados próximamente</p>
               </div>
             )}
           </div>
 
           {/* Acciones rápidas */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-              <span className="mr-2">⚡</span>
+          <div className="bg-white border rounded-lg p-4">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
               Acciones Rápidas
             </h3>
             
-            <div className="space-y-3">
+            <div className="space-y-2">
               <button 
                 onClick={() => router.push('/expenses/add')}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium py-2 px-3 rounded text-sm transition-colors"
               >
-                <span className="mr-2">➕</span>
                 Nuevo Gasto
               </button>
               
               <button 
                 onClick={() => router.push('/loans')}
-                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
+                className="w-full border border-gray-300 hover:bg-gray-50 text-gray-900 font-medium py-2 px-3 rounded text-sm transition-colors"
               >
-                <span className="mr-2">🏦</span>
                 Gestionar Préstamos
               </button>
               
               <button 
                 onClick={() => router.push('/predictions-monthly')}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
+                className="w-full border border-gray-300 hover:bg-gray-50 text-gray-900 font-medium py-2 px-3 rounded text-sm transition-colors"
               >
-                <span className="mr-2">📊</span>
                 Ver Predicciones
               </button>
               
@@ -366,28 +317,27 @@ export default function Home() {
         </div>
 
         {/* Resumen rápido */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-            <span className="mr-2">📋</span>
-            Resumen Rápido
+        <div className="bg-white border rounded-lg p-4">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Resumen
           </h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">{stats.totalExpenses}</p>
-              <p className="text-sm text-blue-700">Gastos Registrados</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-3">
+              <p className="text-xl font-semibold text-gray-900">{stats.totalExpenses}</p>
+              <p className="text-sm text-gray-600">Gastos Registrados</p>
             </div>
             
-            <div className="text-center p-4 bg-orange-50 rounded-lg">
-              <p className="text-2xl font-bold text-orange-600">{stats.totalLoans}</p>
-              <p className="text-sm text-orange-700">Préstamos Activos</p>
+            <div className="text-center p-3">
+              <p className="text-xl font-semibold text-gray-900">{stats.totalLoans}</p>
+              <p className="text-sm text-gray-600">Préstamos Activos</p>
             </div>
             
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-2xl font-bold text-green-600">
-                €{(stats.monthlyRecurring + stats.monthlyLoanPayments).toFixed(0)}
+            <div className="text-center p-3">
+              <p className="text-xl font-semibold text-gray-900">
+                {formatEuroNoDecimals(stats.monthlyRecurring + stats.monthlyLoanPayments)}
               </p>
-              <p className="text-sm text-green-700">Total Mensual</p>
+              <p className="text-sm text-gray-600">Total Mensual</p>
             </div>
           </div>
         </div>

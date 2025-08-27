@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
+import { formatEuro, formatEuroNoDecimals } from '../lib/formatters'
 
 export default function MonthlyView() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
@@ -141,7 +142,7 @@ export default function MonthlyView() {
                 Total del Mes
               </h3>
               <p className="text-3xl font-bold text-blue-600">
-                €{totalMonth.toLocaleString()}
+                {formatEuroNoDecimals(totalMonth)}
               </p>
             </div>
           </div>
@@ -163,7 +164,7 @@ export default function MonthlyView() {
                 Gasto Promedio
               </h3>
               <p className="text-3xl font-bold text-purple-600">
-                €{totalExpenses > 0 ? (totalMonth / totalExpenses).toFixed(0) : '0'}
+                {formatEuroNoDecimals(totalExpenses > 0 ? (totalMonth / totalExpenses) : 0)}
               </p>
             </div>
           </div>
@@ -197,7 +198,7 @@ export default function MonthlyView() {
                             {category.name} ({category.count} gasto{category.count !== 1 ? 's' : ''})
                           </span>
                           <span className="text-sm text-gray-600">
-                            €{category.amount.toFixed(2)} ({percentage.toFixed(1)}%)
+                            {formatEuro(category.amount)} ({percentage.toFixed(1)}%)
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -260,7 +261,7 @@ export default function MonthlyView() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-gray-900">
-                      €{expense.amount}
+                      {formatEuro(expense.amount)}
                     </p>
                   </div>
                 </div>

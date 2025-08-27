@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Layout from '../../components/Layout'
 import { supabase } from '../../lib/supabase'
+import { formatEuro, formatEuroNoDecimals } from '../../lib/formatters'
 import Link from 'next/link'
 
 interface Expense {
@@ -334,7 +335,7 @@ export default function ExpensesManager() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-gray-900">
-                          €{expense.amount.toLocaleString()}
+                          {formatEuro(expense.amount)}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

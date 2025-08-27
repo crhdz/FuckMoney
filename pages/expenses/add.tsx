@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Layout from '../../components/Layout'
 import { supabase, getLoans } from '../../lib/supabase'
+import { formatEuro, formatEuroNoDecimals } from '../../lib/formatters'
 
 export default function AddExpense() {
   const [formData, setFormData] = useState({
@@ -232,7 +233,7 @@ export default function AddExpense() {
                 <option value="">Sin préstamo asociado</option>
                 {loans.map(loan => (
                   <option key={loan.id} value={loan.id}>
-                    {loan.name} - €{loan.monthly_payment}/mes
+                    {loan.name} - {formatEuro(loan.monthly_payment)}/mes
                   </option>
                 ))}
               </select>
