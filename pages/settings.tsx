@@ -1,16 +1,29 @@
 import React, { useState } from 'react'
 import Layout from '../components/Layout'
 import CategoriesList from '../components/CategoriesList'
-import { checkSupabaseConnection } from '../lib/supabase'
+import { checkSupabaseConnection, supabase } from '../lib/supabase'
+import * as XLSX from 'xlsx'
 
 export default function Settings() {
   const [dbStatus, setDbStatus] = useState<'checking' | 'ok' | 'error'>('checking');
+  const [user, setUser] = useState<any>(null);
 
   React.useEffect(() => {
     (async () => {
       const ok = await checkSupabaseConnection();
       setDbStatus(ok ? 'ok' : 'error');
     })();
+    
+    // Obtener usuario actual
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user || null);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
   const [settings, setSettings] = useState({
     currency: 'EUR',
@@ -51,10 +64,134 @@ export default function Settings() {
     alert('Configuraciones guardadas correctamente')
   }
 
-  const handleExport = () => {
-    // Aquí se implementaría la exportación
-    console.log('Exportando datos en formato:', exportFormat)
-    alert(`Exportando datos en formato ${exportFormat.toUpperCase()}...`)
+  const handleExport = async () => {
+    if (!user) {
+      alert('Debes iniciar sesión para exportar datos');
+      return;
+    }
+
+    try {
+      // Obtener todos los datos del usuario
+      const [expensesResult, categoriesResult, loansResult] = await Promise.all([
+        supabase.from('expenses').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('categories').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('loans').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+      ]);
+
+      const expenses = expensesResult.data || [];
+      const categories = categoriesResult.data || [];
+      const loans = loansResult.data || [];
+
+      if (exportFormat === 'xlsx') {
+        // Crear workbook de Excel
+        const workbook = XLSX.utils.book_new();
+
+        // Hoja de gastos
+        if (expenses.length > 0) {
+          const expensesFormatted = expenses.map(expense => ({
+            'Nombre': expense.name,
+            'Cantidad (€)': expense.amount,
+            'Frecuencia': expense.frequency,
+            'Categoría': expense.category || 'Sin categoría',
+            'Fecha inicio': expense.start_date,
+            'Fecha fin': expense.end_date || 'Sin fecha fin',
+            'Recurrente': expense.is_recurring ? 'Sí' : 'No',
+            'Préstamo asociado': expense.loan_id || 'Ninguno',
+            'Fecha creación': new Date(expense.created_at).toLocaleDateString()
+          }));
+          const expensesWorksheet = XLSX.utils.json_to_sheet(expensesFormatted);
+          XLSX.utils.book_append_sheet(workbook, expensesWorksheet, 'Gastos');
+        }
+
+        // Hoja de categorías
+        if (categories.length > 0) {
+          const categoriesFormatted = categories.map(category => ({
+            'Nombre': category.name,
+            'Color': category.color,
+            'Ícono': category.icon,
+            'Fecha creación': new Date(category.created_at).toLocaleDateString()
+          }));
+          const categoriesWorksheet = XLSX.utils.json_to_sheet(categoriesFormatted);
+          XLSX.utils.book_append_sheet(workbook, categoriesWorksheet, 'Categorías');
+        }
+
+        // Hoja de préstamos
+        if (loans.length > 0) {
+          const loansFormatted = loans.map(loan => ({
+            'Nombre': loan.name,
+            'Monto total (€)': loan.total_amount,
+            'Monto restante (€)': loan.remaining_amount,
+            'Pago mensual (€)': loan.monthly_payment,
+            'Tasa interés (%)': loan.interest_rate,
+            'Fecha inicio': loan.start_date,
+            'Fecha fin': loan.end_date,
+            'Fecha creación': new Date(loan.created_at).toLocaleDateString()
+          }));
+          const loansWorksheet = XLSX.utils.json_to_sheet(loansFormatted);
+          XLSX.utils.book_append_sheet(workbook, loansWorksheet, 'Préstamos');
+        }
+
+        // Descargar archivo
+        const fileName = `fuck-money-export-${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+        alert(`Datos exportados exitosamente como ${fileName}`);
+      } else if (exportFormat === 'csv') {
+        // Exportar solo gastos como CSV
+        if (expenses.length === 0) {
+          alert('No hay gastos para exportar');
+          return;
+        }
+        
+        const expensesFormatted = expenses.map(expense => ({
+          'Nombre': expense.name,
+          'Cantidad': expense.amount,
+          'Frecuencia': expense.frequency,
+          'Categoría': expense.category || 'Sin categoría',
+          'Fecha inicio': expense.start_date,
+          'Fecha fin': expense.end_date || 'Sin fecha fin',
+          'Recurrente': expense.is_recurring ? 'Sí' : 'No',
+          'Fecha creación': new Date(expense.created_at).toLocaleDateString()
+        }));
+        
+        const worksheet = XLSX.utils.json_to_sheet(expensesFormatted);
+        const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
+        
+        const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `fuck-money-export-${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        alert('Datos exportados exitosamente como CSV');
+      } else if (exportFormat === 'json') {
+        // Exportar todo como JSON
+        const exportData = {
+          exported_at: new Date().toISOString(),
+          user_id: user.id,
+          expenses,
+          categories,
+          loans
+        };
+        
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `fuck-money-export-${new Date().toISOString().split('T')[0]}.json`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        alert('Datos exportados exitosamente como JSON');
+      }
+    } catch (error) {
+      console.error('Error exportando datos:', error);
+      alert('Error al exportar datos. Por favor intenta de nuevo.');
+    }
   }
 
   const handleImport = () => {
@@ -249,8 +386,9 @@ export default function Settings() {
                 <button
                   onClick={handleExport}
                   className="btn-primary w-full"
+                  disabled={!user}
                 >
-                  📥 Exportar Todos los Datos
+                  📥 {!user ? 'Inicia sesión para exportar' : 'Exportar Todos los Datos'}
                 </button>
                 
                 <p className="text-sm text-gray-600">
