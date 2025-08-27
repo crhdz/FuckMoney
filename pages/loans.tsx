@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import Layout from '../components/Layout'
-import { supabase, getLoans, addLoan, updateLoan, deleteLoan, calculateLoanInfo, getLoanPayments, addLoanPayment, deleteLoanPayment } from '../lib/supabase'
+import { supabase, getLoans, addLoan, updateLoan, deleteLoan, calculateLoanInfo, getLoanPayments, addLoanPayment, updateLoanPayment, deleteLoanPayment } from '../lib/supabase'
 import { formatEuro, formatEuroNoDecimals } from '../lib/formatters'
 
 export default function Loans() {
@@ -10,6 +10,9 @@ export default function Loans() {
   const [editingLoan, setEditingLoan] = useState<any>(null)
   const [user, setUser] = useState<any>(null)
   const [showPaymentForm, setShowPaymentForm] = useState<string | null>(null)
+  const [showPaymentsList, setShowPaymentsList] = useState<string | null>(null)
+  const [loanPayments, setLoanPayments] = useState<any[]>([])
+  const [editingPayment, setEditingPayment] = useState<any>(null)
   const [paymentAmount, setPaymentAmount] = useState('')
   const [paymentDescription, setPaymentDescription] = useState('')
   const [formData, setFormData] = useState({
@@ -164,7 +167,19 @@ export default function Loans() {
       user_id: user?.id
     };
 
-    const { error } = await addLoanPayment(paymentData);
+    let error;
+    if (editingPayment) {
+      // Actualizar aportación existente
+      const updateData = {
+        amount: parseFloat(paymentAmount),
+        description: paymentDescription || 'Aportación extra'
+      };
+      ({ error } = await updateLoanPayment(editingPayment.id, updateData));
+    } else {
+      // Crear nueva aportación
+      ({ error } = await addLoanPayment(paymentData));
+    }
+
     if (error) {
       alert(`Error: ${error.message}`);
       return;
@@ -172,13 +187,56 @@ export default function Loans() {
 
     setPaymentAmount('');
     setPaymentDescription('');
+    setEditingPayment(null);
     setShowPaymentForm(null);
     fetchLoans(); // Recargar para actualizar los cálculos
+    if (showPaymentsList) {
+      fetchLoanPayments(showPaymentsList); // Actualizar lista de aportaciones
+    }
+  }
+
+  async function fetchLoanPayments(loanId: string) {
+    const { data, error } = await getLoanPayments(loanId);
+    if (error) {
+      console.error('Error fetching payments:', error);
+      return;
+    }
+    setLoanPayments(data || []);
+  }
+
+  async function handleDeletePayment(paymentId: string, loanId: string) {
+    if (confirm('¿Estás seguro de que quieres eliminar esta aportación?')) {
+      const { error } = await deleteLoanPayment(paymentId);
+      if (error) {
+        alert(`Error: ${error.message}`);
+        return;
+      }
+      fetchLoans(); // Recargar para actualizar los cálculos
+      fetchLoanPayments(loanId); // Actualizar lista de aportaciones
+    }
+  }
+
+  function startEditPayment(payment: any) {
+    setEditingPayment(payment);
+    setPaymentAmount(payment.amount.toString());
+    setPaymentDescription(payment.description || '');
+    setShowPaymentForm(payment.loan_id);
+  }
+
+  function togglePaymentsList(loanId: string) {
+    if (showPaymentsList === loanId) {
+      setShowPaymentsList(null);
+      setLoanPayments([]);
+    } else {
+      setShowPaymentsList(loanId);
+      fetchLoanPayments(loanId);
+    }
   }
 
   function cancelPayment() {
     setPaymentAmount('');
     setPaymentDescription('');
+    setEditingPayment(null);
     setShowPaymentForm(null);
   }
 
@@ -266,10 +324,10 @@ export default function Loans() {
           ) : (
             <div className="divide-y divide-gray-200">
               {loans.map(loan => {
-                // Calcular porcentaje completado
-                const totalMonths = loan.loanInfo?.totalMonths || 1;
-                const elapsedMonths = loan.loanInfo?.elapsedMonths || 0;
-                const completedPercentage = Math.min(100, Math.max(0, (elapsedMonths / totalMonths) * 100));
+                // Calcular porcentaje completado basado en monto pagado vs monto total
+                const totalAmount = loan.total_amount || 1;
+                const totalPaid = loan.loanInfo?.totalPaid || 0;
+                const completedPercentage = Math.min(100, Math.max(0, (totalPaid / totalAmount) * 100));
                 
                 return (
                 <div key={loan.id} className="p-6">
@@ -316,12 +374,18 @@ export default function Loans() {
                       </div>
                     </div>
                     <div className="flex flex-col space-y-2 ml-4">
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => setShowPaymentForm(loan.id)}
                           className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
                         >
-                          Aportación
+                          {editingPayment && showPaymentForm === loan.id ? 'Editar' : 'Aportación'}
+                        </button>
+                        <button
+                          onClick={() => togglePaymentsList(loan.id)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+                        >
+                          {showPaymentsList === loan.id ? 'Ocultar' : 'Ver Aportaciones'}
                         </button>
                         <button
                           onClick={() => startEdit(loan)}
@@ -340,7 +404,9 @@ export default function Loans() {
                       {/* Formulario de aportación */}
                       {showPaymentForm === loan.id && (
                         <div className="mt-3 p-3 border border-gray-200 rounded-lg bg-gray-50">
-                          <h5 className="text-sm font-medium text-gray-900 mb-2">Hacer Aportación Extra</h5>
+                          <h5 className="text-sm font-medium text-gray-900 mb-2">
+                            {editingPayment ? 'Editar Aportación' : 'Hacer Aportación Extra'}
+                          </h5>
                           <div className="space-y-2">
                             <input
                               type="number"
@@ -372,6 +438,48 @@ export default function Loans() {
                               </button>
                             </div>
                           </div>
+                        </div>
+                      )}
+                      
+                      {/* Lista de aportaciones */}
+                      {showPaymentsList === loan.id && (
+                        <div className="mt-3 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                          <h5 className="text-sm font-medium text-gray-900 mb-2">Historial de Aportaciones</h5>
+                          {loanPayments.length === 0 ? (
+                            <p className="text-sm text-gray-500">No hay aportaciones registradas</p>
+                          ) : (
+                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                              {loanPayments.map(payment => (
+                                <div key={payment.id} className="flex justify-between items-center p-2 bg-white rounded border">
+                                  <div className="flex-1">
+                                    <div className="flex justify-between">
+                                      <span className="text-sm font-medium">{formatEuro(payment.amount)}</span>
+                                      <span className="text-xs text-gray-500">
+                                        {new Date(payment.payment_date).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                    {payment.description && (
+                                      <p className="text-xs text-gray-600 mt-1">{payment.description}</p>
+                                    )}
+                                  </div>
+                                  <div className="flex space-x-1 ml-2">
+                                    <button
+                                      onClick={() => startEditPayment(payment)}
+                                      className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
+                                    >
+                                      Editar
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeletePayment(payment.id, loan.id)}
+                                      className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
+                                    >
+                                      Eliminar
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

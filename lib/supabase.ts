@@ -252,6 +252,14 @@ export async function addLoanPayment(payment: Omit<LoanPayment, 'id' | 'created_
     .select();
 }
 
+export async function updateLoanPayment(id: string, updates: Partial<LoanPayment>) {
+  return supabase
+    .from('loan_payments')
+    .update(updates)
+    .eq('id', id)
+    .select();
+}
+
 export async function deleteLoanPayment(id: string) {
   return supabase
     .from('loan_payments')
