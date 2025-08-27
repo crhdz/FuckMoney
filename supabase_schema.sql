@@ -21,9 +21,7 @@ CREATE TABLE public.loans (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name TEXT NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
-    remaining_amount DECIMAL(10,2) NOT NULL,
     monthly_payment DECIMAL(10,2) NOT NULL,
-    interest_rate DECIMAL(5,2) NOT NULL DEFAULT 0,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -152,7 +150,6 @@ CREATE TRIGGER set_expenses_user_id BEFORE INSERT ON public.expenses
 
 -- Comentarios para documentación
 COMMENT ON TABLE public.categories IS 'Categorías de gastos definidas por el usuario';
-COMMENT ON TABLE public.loans IS 'Préstamos del usuario con cálculos automáticos';
+COMMENT ON TABLE public.loans IS 'Préstamos del usuario con cálculo automático de fecha fin';
 COMMENT ON TABLE public.expenses IS 'Gastos recurrentes y únicos del usuario';
 COMMENT ON COLUMN public.expenses.loan_id IS 'Referencia opcional a un préstamo';
-COMMENT ON COLUMN public.loans.remaining_amount IS 'Cantidad restante por pagar del préstamo';

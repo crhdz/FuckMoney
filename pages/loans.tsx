@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import Layout from '../components/Layout'
-import { supabase, getLoans, addLoan, updateLoan, deleteLoan, calculateRemainingPayments } from '../lib/supabase'
+import { supabase, getLoans, addLoan, updateLoan, deleteLoan, calculateLoanInfo } from '../lib/supabase'
 
 export default function Loans() {
   const [loans, setLoans] = useState<any[]>([])
@@ -12,7 +12,6 @@ export default function Loans() {
     name: '',
     total_amount: '',
     monthly_payment: '',
-    interest_rate: '',
     start_date: '',
     end_date: ''
   })
@@ -76,8 +75,8 @@ export default function Loans() {
     if (!error && data) {
       const loansWithCalculations = await Promise.all(
         data.map(async (loan) => {
-          const remaining = await calculateRemainingPayments(loan.id);
-          return { ...loan, remaining };
+          const loanInfo = await calculateLoanInfo(loan.id);
+          return { ...loan, loanInfo };
         })
       );
       setLoans(loansWithCalculations);
@@ -92,9 +91,7 @@ export default function Loans() {
     const loanData = {
       name: formData.name,
       total_amount: parseFloat(formData.total_amount),
-      remaining_amount: parseFloat(formData.total_amount), // Inicialmente el monto total
       monthly_payment: parseFloat(formData.monthly_payment),
-      interest_rate: parseFloat(formData.interest_rate),
       start_date: formData.start_date,
       end_date: formData.end_date,
       user_id: user.id
@@ -116,7 +113,6 @@ export default function Loans() {
       name: '',
       total_amount: '',
       monthly_payment: '',
-      interest_rate: '',
       start_date: '',
       end_date: ''
     });
@@ -142,7 +138,6 @@ export default function Loans() {
       name: loan.name,
       total_amount: loan.total_amount.toString(),
       monthly_payment: loan.monthly_payment.toString(),
-      interest_rate: loan.interest_rate.toString(),
       start_date: loan.start_date,
       end_date: loan.end_date
     };
@@ -192,7 +187,7 @@ export default function Loans() {
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Por Pagar Total</h3>
             <p className="text-3xl font-bold text-red-600">
-              €{loans.reduce((sum, loan) => sum + (loan.remaining?.remainingAmount || 0), 0).toFixed(2)}
+              €{loans.reduce((sum, loan) => sum + (loan.loanInfo?.remainingAmount || 0), 0).toFixed(2)}
             </p>
           </div>
         </div>
@@ -220,11 +215,11 @@ export default function Loans() {
                         </div>
                         <div>
                           <span className="text-gray-500">Meses restantes:</span>
-                          <p className="font-semibold">{loan.remaining?.remainingMonths || 0}</p>
+                          <p className="font-semibold">{loan.loanInfo?.remainingMonths || 0}</p>
                         </div>
                         <div>
                           <span className="text-gray-500">Falta por pagar:</span>
-                          <p className="font-semibold text-red-600">€{loan.remaining?.remainingAmount?.toFixed(2) || '0.00'}</p>
+                          <p className="font-semibold text-red-600">€{loan.loanInfo?.remainingAmount?.toFixed(2) || '0.00'}</p>
                         </div>
                         <div>
                           <span className="text-gray-500">Fecha fin:</span>
@@ -269,7 +264,6 @@ export default function Loans() {
                       name: '',
                       total_amount: '',
                       monthly_payment: '',
-                      interest_rate: '',
                       start_date: '',
                       end_date: ''
                     });
@@ -311,18 +305,6 @@ export default function Loans() {
                     step="0.01"
                     value={formData.monthly_payment}
                     onChange={(e) => handleFormDataChange('monthly_payment', e.target.value)}
-                    className="input w-full"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="label">Tasa de interés (%)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.interest_rate}
-                    onChange={(e) => handleFormDataChange('interest_rate', e.target.value)}
                     className="input w-full"
                     required
                   />

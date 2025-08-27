@@ -120,9 +120,7 @@ export default function Settings() {
           const loansFormatted = loans.map(loan => ({
             'Nombre': loan.name,
             'Monto total (€)': loan.total_amount,
-            'Monto restante (€)': loan.remaining_amount,
             'Pago mensual (€)': loan.monthly_payment,
-            'Tasa interés (%)': loan.interest_rate,
             'Fecha inicio': loan.start_date,
             'Fecha fin': loan.end_date,
             'Fecha creación': new Date(loan.created_at).toLocaleDateString()

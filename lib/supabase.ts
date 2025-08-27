@@ -32,9 +32,7 @@ export interface Loan {
   id: string
   name: string
   total_amount: number
-  remaining_amount: number
   monthly_payment: number
-  interest_rate: number
   start_date: string
   end_date: string
   user_id?: string
@@ -183,8 +181,8 @@ export async function deleteLoan(id: string) {
     .eq('id', id)
 }
 
-// Función para calcular cuánto falta por pagar de un préstamo
-export async function calculateRemainingPayments(loanId: string) {
+// Función simplificada para calcular información del préstamo
+export async function calculateLoanInfo(loanId: string) {
   const { data: loan } = await supabase
     .from('loans')
     .select('*')
@@ -197,11 +195,14 @@ export async function calculateRemainingPayments(loanId: string) {
   const endDate = new Date(loan.end_date);
   const startDate = new Date(loan.start_date);
   
-  const totalMonths = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
-  const elapsedMonths = Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
+  // Calcular meses totales y transcurridos
+  const totalMonths = Math.ceil(loan.total_amount / loan.monthly_payment);
+  const elapsedMonths = Math.max(0, Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44))); // 30.44 días promedio por mes
   const remainingMonths = Math.max(0, totalMonths - elapsedMonths);
   
   return {
+    totalMonths,
+    elapsedMonths,
     remainingMonths,
     remainingAmount: remainingMonths * loan.monthly_payment,
     monthlyPayment: loan.monthly_payment
