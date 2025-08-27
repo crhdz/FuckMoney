@@ -173,7 +173,7 @@ export default function Loans() {
         </div>
 
         {/* Resumen */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Préstamos</h3>
             <p className="text-3xl font-bold text-blue-600">{loans.length}</p>
@@ -190,6 +190,31 @@ export default function Loans() {
               €{loans.reduce((sum, loan) => sum + (loan.loanInfo?.remainingAmount || 0), 0).toFixed(2)}
             </p>
           </div>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Progreso Promedio</h3>
+            {(() => {
+              const totalProgress = loans.reduce((sum, loan) => {
+                const totalMonths = loan.loanInfo?.totalMonths || 1;
+                const elapsedMonths = loan.loanInfo?.elapsedMonths || 0;
+                return sum + Math.min(100, Math.max(0, (elapsedMonths / totalMonths) * 100));
+              }, 0);
+              const averageProgress = loans.length > 0 ? totalProgress / loans.length : 0;
+              
+              return (
+                <div>
+                  <p className="text-3xl font-bold text-green-600 mb-2">
+                    {averageProgress.toFixed(1)}%
+                  </p>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${averageProgress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
         </div>
 
         {/* Lista de préstamos */}
@@ -203,11 +228,33 @@ export default function Loans() {
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {loans.map(loan => (
+              {loans.map(loan => {
+                // Calcular porcentaje completado
+                const totalMonths = loan.loanInfo?.totalMonths || 1;
+                const elapsedMonths = loan.loanInfo?.elapsedMonths || 0;
+                const completedPercentage = Math.min(100, Math.max(0, (elapsedMonths / totalMonths) * 100));
+                
+                return (
                 <div key={loan.id} className="p-6">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <h4 className="text-lg font-semibold text-gray-900">{loan.name}</h4>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-lg font-semibold text-gray-900">{loan.name}</h4>
+                        <span className="text-sm font-medium text-gray-600">
+                          {completedPercentage.toFixed(1)}% completado
+                        </span>
+                      </div>
+                      
+                      {/* Barra de progreso */}
+                      <div className="mb-4">
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${completedPercentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
                       <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                           <span className="text-gray-500">Pago mensual:</span>
@@ -243,7 +290,8 @@ export default function Loans() {
                     </div>
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
