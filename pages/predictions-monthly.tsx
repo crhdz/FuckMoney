@@ -122,13 +122,28 @@ export default function MonthlyRecurring() {
           const expenseStart = new Date(expense.start_date)
           return expenseStart <= endDate
         })
-        .map(expense => ({
-          name: expense.name,
-          amount: expense.amount,
-          category: expense.category || 'Sin categoría',
-          date: startDate.toISOString().split('T')[0],
-          isRecurring: true
-        }))
+        .map(expense => {
+          // Calcular el día del mes basado en la frecuencia y fecha de inicio
+          const expenseStart = new Date(expense.start_date)
+          let dayOfMonth = expenseStart.getDate()
+          
+          // Para gastos mensuales, usar el día de la fecha de inicio
+          if (expense.frequency === 'monthly') {
+            // Si el día no existe en el mes actual (ej: 31 en febrero), usar el último día del mes
+            const lastDayOfMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate()
+            dayOfMonth = Math.min(dayOfMonth, lastDayOfMonth)
+          }
+          
+          return {
+            name: expense.name,
+            amount: expense.amount,
+            category: expense.category || 'Sin categoría',
+            date: startDate.toISOString().split('T')[0],
+            dayOfMonth: dayOfMonth,
+            frequency: expense.frequency,
+            isRecurring: true
+          }
+        })
 
       setUpcomingExpenses(upcomingList)
 
@@ -233,32 +248,6 @@ export default function MonthlyRecurring() {
               </div>
             )}
           </div>
-
-          {/* Información adicional */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">
-              Información del Mes
-            </h3>
-            
-            <div className="space-y-4">
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="font-semibold text-blue-800 mb-2">📊 Resumen</h4>
-                <p className="text-blue-700 text-sm">
-                  Estos son tus gastos recurrentes confirmados para {months[selectedMonth]} {selectedYear}. 
-                  Son valores seguros basados en tus suscripciones y gastos fijos registrados.
-                </p>
-              </div>
-              
-              {monthlyData.recurringExpenses > 0 && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-semibold text-green-800 mb-2">✓ Gastos Confirmados</h4>
-                  <p className="text-green-700 text-sm">
-                    Total de gastos recurrentes: €{monthlyData.recurringExpenses.toFixed(0)}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Próximos gastos */}
@@ -291,7 +280,7 @@ export default function MonthlyRecurring() {
                           )}
                         </h4>
                         <p className="text-sm text-gray-600">
-                          {expense.category}
+                          {expense.category} • Día {expense.dayOfMonth}
                         </p>
                       </div>
                     </div>

@@ -30,7 +30,7 @@ export default function AnnualRecurring() {
     monthlyBreakdown: [],
     categoryBreakdown: []
   })
-  const [viewMode, setViewMode] = useState<'overview' | 'monthly'>('overview')
+  const [viewMode, setViewMode] = useState<'overview' | 'monthly'>('monthly')
 
   const months = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
