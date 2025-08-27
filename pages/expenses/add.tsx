@@ -93,6 +93,7 @@ export default function AddExpense() {
       name: formData.name,
       amount: parseFloat(formData.amount),
       frequency: formData.frequency,
+      category: formData.category,
       start_date: formData.startDate,
       end_date: formData.endDate || null,
       is_recurring: formData.isRecurring,
@@ -197,7 +198,7 @@ export default function AddExpense() {
             {/* Categoría */}
             <div>
               <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                Categoría (solo visual, no se guarda aún) *
+                Categoría *
               </label>
               <select
                 id="category"
