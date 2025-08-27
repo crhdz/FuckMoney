@@ -103,7 +103,7 @@ export default function AnnualRecurring() {
               monthlyAmount = index % 3 === 0 ? expense.amount : 0
               break
             case 'yearly':
-              monthlyAmount = index === 0 ? expense.amount : 0 // Asumimos enero para gastos anuales
+              monthlyAmount = expense.amount / 12 // Distribuir anualmente entre 12 meses
               break
           }
           return total + monthlyAmount
