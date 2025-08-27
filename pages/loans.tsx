@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import Layout from '../components/Layout'
-import { supabase, getLoans, addLoan, updateLoan, deleteLoan, calculateLoanInfo } from '../lib/supabase'
+import { supabase, getLoans, addLoan, updateLoan, deleteLoan, calculateLoanInfo, getLoanPayments, addLoanPayment, deleteLoanPayment } from '../lib/supabase'
 import { formatEuro, formatEuroNoDecimals } from '../lib/formatters'
 
 export default function Loans() {
@@ -9,6 +9,9 @@ export default function Loans() {
   const [showForm, setShowForm] = useState(false)
   const [editingLoan, setEditingLoan] = useState<any>(null)
   const [user, setUser] = useState<any>(null)
+  const [showPaymentForm, setShowPaymentForm] = useState<string | null>(null)
+  const [paymentAmount, setPaymentAmount] = useState('')
+  const [paymentDescription, setPaymentDescription] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     total_amount: '',
@@ -146,6 +149,39 @@ export default function Loans() {
     setShowForm(true);
   }
 
+  async function handleExtraPayment(loanId: string) {
+    if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
+      alert('Por favor, ingresa un monto válido');
+      return;
+    }
+
+    const paymentData = {
+      loan_id: loanId,
+      amount: parseFloat(paymentAmount),
+      payment_date: new Date().toISOString().split('T')[0],
+      payment_type: 'extra' as const,
+      description: paymentDescription || 'Aportación extra',
+      user_id: user?.id
+    };
+
+    const { error } = await addLoanPayment(paymentData);
+    if (error) {
+      alert(`Error: ${error.message}`);
+      return;
+    }
+
+    setPaymentAmount('');
+    setPaymentDescription('');
+    setShowPaymentForm(null);
+    fetchLoans(); // Recargar para actualizar los cálculos
+  }
+
+  function cancelPayment() {
+    setPaymentAmount('');
+    setPaymentDescription('');
+    setShowPaymentForm(null);
+  }
+
   if (loading) {
     return (
       <Layout title="Préstamos">
@@ -256,7 +292,7 @@ export default function Loans() {
                         </div>
                       </div>
                       
-                      <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div className="mt-2 grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                         <div>
                           <span className="text-gray-500">Pago mensual:</span>
                           <p className="font-semibold">{formatEuro(loan.monthly_payment)}</p>
@@ -270,24 +306,74 @@ export default function Loans() {
                           <p className="font-semibold text-red-600">{formatEuro(loan.loanInfo?.remainingAmount || 0)}</p>
                         </div>
                         <div>
+                          <span className="text-gray-500">Aportaciones extra:</span>
+                          <p className="font-semibold text-green-600">{formatEuro(loan.loanInfo?.totalExtraPayments || 0)}</p>
+                        </div>
+                        <div>
                           <span className="text-gray-500">Fecha fin:</span>
                           <p className="font-semibold">{new Date(loan.end_date).toLocaleDateString()}</p>
                         </div>
                       </div>
                     </div>
-                    <div className="flex space-x-2 ml-4">
-                      <button
-                        onClick={() => startEdit(loan)}
-                        className="btn-secondary text-sm"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(loan.id)}
-                        className="btn-danger text-sm"
-                      >
-                        Eliminar
-                      </button>
+                    <div className="flex flex-col space-y-2 ml-4">
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => setShowPaymentForm(loan.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+                        >
+                          Aportación
+                        </button>
+                        <button
+                          onClick={() => startEdit(loan)}
+                          className="btn-secondary text-sm"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDelete(loan.id)}
+                          className="btn-danger text-sm"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                      
+                      {/* Formulario de aportación */}
+                      {showPaymentForm === loan.id && (
+                        <div className="mt-3 p-3 border border-gray-200 rounded-lg bg-gray-50">
+                          <h5 className="text-sm font-medium text-gray-900 mb-2">Hacer Aportación Extra</h5>
+                          <div className="space-y-2">
+                            <input
+                              type="number"
+                              step="0.01"
+                              placeholder="Monto de la aportación"
+                              value={paymentAmount}
+                              onChange={(e) => setPaymentAmount(e.target.value)}
+                              className="w-full px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Descripción (opcional)"
+                              value={paymentDescription}
+                              onChange={(e) => setPaymentDescription(e.target.value)}
+                              className="w-full px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                            />
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleExtraPayment(loan.id)}
+                                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+                              >
+                                Confirmar
+                              </button>
+                              <button
+                                onClick={cancelPayment}
+                                className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

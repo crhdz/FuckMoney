@@ -40,6 +40,17 @@ export interface Loan {
   updated_at: string
 }
 
+export interface LoanPayment {
+  id: string
+  loan_id: string
+  amount: number
+  payment_date: string
+  payment_type: 'regular' | 'extra'
+  description?: string
+  user_id?: string
+  created_at: string
+}
+
 // CRUD para gastos
 // Comprobar conexión a la base de datos
 export async function checkSupabaseConnection() {
@@ -191,6 +202,15 @@ export async function calculateLoanInfo(loanId: string) {
 
   if (!loan) return null;
 
+  // Obtener todas las aportaciones extra para este préstamo
+  const { data: extraPayments } = await supabase
+    .from('loan_payments')
+    .select('amount')
+    .eq('loan_id', loanId)
+    .eq('payment_type', 'extra');
+
+  const totalExtraPayments = extraPayments?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
+
   const today = new Date();
   const endDate = new Date(loan.end_date);
   const startDate = new Date(loan.start_date);
@@ -198,13 +218,43 @@ export async function calculateLoanInfo(loanId: string) {
   // Calcular meses totales y transcurridos
   const totalMonths = Math.ceil(loan.total_amount / loan.monthly_payment);
   const elapsedMonths = Math.max(0, Math.ceil((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30.44))); // 30.44 días promedio por mes
-  const remainingMonths = Math.max(0, totalMonths - elapsedMonths);
+  
+  // Calcular el monto restante considerando las aportaciones extra
+  const paidRegularPayments = elapsedMonths * loan.monthly_payment;
+  const totalPaid = paidRegularPayments + totalExtraPayments;
+  const remainingAmount = Math.max(0, loan.total_amount - totalPaid);
+  const remainingMonths = remainingAmount > 0 ? Math.ceil(remainingAmount / loan.monthly_payment) : 0;
   
   return {
     totalMonths,
     elapsedMonths,
     remainingMonths,
-    remainingAmount: remainingMonths * loan.monthly_payment,
-    monthlyPayment: loan.monthly_payment
+    remainingAmount,
+    monthlyPayment: loan.monthly_payment,
+    totalExtraPayments,
+    totalPaid
   };
+}
+
+// CRUD para aportaciones de préstamos
+export async function getLoanPayments(loanId: string) {
+  return supabase
+    .from('loan_payments')
+    .select('*')
+    .eq('loan_id', loanId)
+    .order('payment_date', { ascending: false });
+}
+
+export async function addLoanPayment(payment: Omit<LoanPayment, 'id' | 'created_at'>) {
+  return supabase
+    .from('loan_payments')
+    .insert([payment])
+    .select();
+}
+
+export async function deleteLoanPayment(id: string) {
+  return supabase
+    .from('loan_payments')
+    .delete()
+    .eq('id', id);
 }
